@@ -1,0 +1,8 @@
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\bin\Debug\MNIT.Inventory.exe
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\bin\Debug\MNIT.Inventory.pdb
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\bin\Debug\Microsoft.SharePoint.Client.WorkflowServices.dll
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\obj\Debug\MNIT.Inventory.csprojResolveAssemblyReference.cache
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\obj\Debug\MNIT.Inventory.exe
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\obj\Debug\MNIT.Inventory.pdb
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\bin\Debug\MNIT.Utilities.exe
+\\EDC1AdminFS01\home\akroma\Documents\Visual Studio 2013\Projects\MNIT.ConsoleApps\MNIT.Inventory\bin\Debug\MNIT.Utilities.pdb
