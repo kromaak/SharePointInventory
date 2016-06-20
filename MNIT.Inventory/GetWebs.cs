@@ -242,18 +242,19 @@ namespace MNIT.Inventory
                     {
                         appCounter++;
                         // Write App Web Object To CSV
-                        string[] passingAppWebObject = new string[11];
+                        string[] passingAppWebObject = new string[12];
                         passingAppWebObject[0] = csvFilePath;
-                        passingAppWebObject[1] = siteCollId;
-                        passingAppWebObject[2] = webId;
-                        passingAppWebObject[3] = recursiveSubWeb.Title;
-                        passingAppWebObject[4] = recursiveSubWeb.Url;
-                        passingAppWebObject[5] = "";
-                        passingAppWebObject[6] = urlTemplate;
-                        passingAppWebObject[7] = "";
+                        passingAppWebObject[1] = webApplication;
+                        passingAppWebObject[2] = siteCollId;
+                        passingAppWebObject[3] = webId;
+                        passingAppWebObject[4] = recursiveSubWeb.Title;
+                        passingAppWebObject[5] = recursiveSubWeb.Url;
+                        passingAppWebObject[6] = "";
+                        passingAppWebObject[7] = urlTemplate;
                         passingAppWebObject[8] = "";
-                        passingAppWebObject[9] = "15";
-                        passingAppWebObject[10] = "APP WEB";
+                        passingAppWebObject[9] = "";
+                        passingAppWebObject[10] = "15";
+                        passingAppWebObject[11] = "APP WEB";
                         WriteReports.WriteText(passingAppWebObject);
                     }
                 }

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.SharePoint.Client;
-
+using File = Microsoft.SharePoint.Client.File;
 using Utils = MNIT.Utilities;
 namespace MNIT.Inventory
 {
@@ -83,40 +84,7 @@ namespace MNIT.Inventory
                     string currentListUrl = urlProtocol + "://" + urlDomain + tmpList.DefaultViewUrl;
                     // Build the Web Application Name
                     string webApplication = urlDomain.Split('.')[0];
-                    // Add the list to the stream if it has 5000 list items or more
-                    // Run the function to query large lists needs to be moved here to further optimize
-                    if (tmpList.ItemCount > 4999)
-                    {
-                        largeListCounter++;
-                        strTotalListItemCount = tmpList.ItemCount.ToString();
-                        currentListTitle = tmpList.Title;
-                    }
 
-                    // Unlimited Versioning Check
-                    if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
-                        tmpList.EnableMinorVersions == true)
-                    {
-
-                        if ((tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10) ||
-                            (tmpList.MajorWithMinorVersionsLimit == 0 || tmpList.MajorWithMinorVersionsLimit > 10))
-                        {
-                            unlimitedVerCounter++;
-                            unlimitedVersions = String.Format("Major:{0};Minor:{1}", tmpList.MajorVersionLimit,
-                                tmpList.MajorWithMinorVersionsLimit);
-                            currentListTitle = tmpList.Title;
-                        }
-                    }
-
-                    if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
-                        tmpList.EnableMinorVersions != true)
-                    {
-                        if (tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10)
-                        {
-                            unlimitedVerCounter++;
-                            unlimitedVersions = String.Format("Major:{0}", tmpList.MajorVersionLimit);
-                            currentListTitle = tmpList.Title;
-                        }
-                    }
 
                     // counter including folders
                     int totalListItemCount = tmpList.ItemCount;
@@ -135,47 +103,90 @@ namespace MNIT.Inventory
                     string manageListUrl = "";
                     int largeListDiv = 3;
 
-                    if (tmpList.BaseType == BaseType.DocumentLibrary)
+                    // Add the list to the stream if it has 5000 list items or more
+                    // Run the function to query large lists needs to be moved here to further optimize
+                    if (totalListItemCount < 5000)
                     {
-                        if (totalListItemCount < 5000)
+                        //if (tmpList.ItemCount > 4999)
+                        //{
+                        //    largeListCounter++;
+                        //    strTotalListItemCount = tmpList.ItemCount.ToString();
+                        //    currentListTitle = tmpList.Title;
+                        //}
+
+                        // Unlimited Versioning Check
+                        if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
+                            tmpList.EnableMinorVersions == true)
+                        {
+
+                            if ((tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10) ||
+                                (tmpList.MajorWithMinorVersionsLimit == 0 || tmpList.MajorWithMinorVersionsLimit > 10))
+                            {
+                                unlimitedVerCounter++;
+                                unlimitedVersions = String.Format("Major:{0};Minor:{1}", tmpList.MajorVersionLimit,
+                                    tmpList.MajorWithMinorVersionsLimit);
+                                currentListTitle = tmpList.Title;
+                            }
+                        }
+
+                        if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
+                            tmpList.EnableMinorVersions != true)
+                        {
+                            if (tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10)
+                            {
+                                unlimitedVerCounter++;
+                                unlimitedVersions = String.Format("Major:{0}", tmpList.MajorVersionLimit);
+                                currentListTitle = tmpList.Title;
+                            }
+                        }
+
+                        if (tmpList.BaseType == BaseType.DocumentLibrary)
                         {
                             // Get a count of folders to be removed from the total list item count for comparing to checked in docs
                             var folders = tmpList.GetItems(CreateAllFoldersQuery());
                             ctx.Load(folders, icol => icol.Include(i => i.File));
                             ctx.ExecuteQuery();
-                            foreach (var folder in folders)
-                            {
-                                File fileFolder = folder.File;
-                                ctx.Load(fileFolder);
-                                ctx.ExecuteQuery();
-                                folderCount++;
-                            }
-                            // Get the files from the list
-                            var items = tmpList.GetItems(CreateAllFilesQuery());
-                            ctx.Load(items, icol => icol.Include(i => i.File, i => i.DisplayName));
+                            folderCount = folders.Count;
+
+                            // Get the checked in files from the list
+                            var itemsCheckedIn = tmpList.GetItems(CreateCheckedOutFilesQuery());
+                            ctx.Load(itemsCheckedIn, icol => icol.Include(i => i.File, i => i.DisplayName));
                             ctx.ExecuteQuery();
-                            foreach (var listItem in items)
-                            {
-                                File file = listItem.File;
-                                ctx.Load(file, f => f.CheckOutType);
-                                ctx.ExecuteQuery();
-                                listItemCount++;
-                                if (file.CheckOutType.ToString() == "None")
-                                {
-                                    checkedInCount++;
-                                    //if (listItem["Thumbnail"].ToString().Length > 0)
-                                    //{
-                                    //}
-                                    //else
-                                    //{
-                                    //    checkedInCount++;
-                                    //}
-                                }
-                                else
-                                {
-                                    checkedOutCount++;
-                                }
-                            }
+                            checkedInCount = itemsCheckedIn.Count;
+
+
+                            // Get the checked out files from the list
+                            var itemsCheckedOut = tmpList.GetItems(CreateCheckedOutFilesQuery());
+                            ctx.Load(itemsCheckedOut, icol => icol.Include(i => i.File, i => i.DisplayName));
+                            ctx.ExecuteQuery();
+                            checkedOutCount = itemsCheckedOut.Count;
+                            //var items = tmpList.GetItems(CreateAllFilesQuery());
+                            //ctx.Load(items, icol => icol.Include(i => i.File, i => i.DisplayName));
+                            //ctx.ExecuteQuery();
+                            //foreach (var listItem in items)
+                            //{
+                            //    File file = listItem.File;
+                            //    ctx.Load(file, f => f.CheckOutType);
+                            //    ctx.ExecuteQuery();
+                            //    listItemCount++;
+                            //    if (file.CheckOutType.ToString() == "None")
+                            //    {
+                            //        checkedInCount++;
+                            //        //if (listItem["Thumbnail"].ToString().Length > 0)
+                            //        //{
+                            //        //}
+                            //        //else
+                            //        //{
+                            //        //    checkedInCount++;
+                            //        //}
+                            //    }
+                            //    else
+                            //    {
+                            //        checkedOutCount++;
+                            //    }
+                            //}
+                            //Console.WriteLine(tmpList.Title + " checked out count " + checkedOutCount);
+
                             // Calculate the list item count without the folders
                             listItemCount = Math.Abs(totalListItemCount - folderCount);
                             // Add the list title so it gets included in the detailed report
@@ -220,14 +231,16 @@ namespace MNIT.Inventory
                                 siteCollCheckedOut += checkedOutCount + neverCheckedInCount;
                             }
                         }
-                        else
-                        {
-                            InventoryListItems(siteAddress, currentListTitle, 1000);
-                        }
-
-
-
                     }
+                    else
+                    {
+                        largeListCounter++;
+                        strTotalListItemCount = tmpList.ItemCount.ToString();
+                        currentListTitle = tmpList.Title;
+                        InventoryListItems(siteAddress, currentListTitle, 1000, actingUser);
+                    }
+
+
                     if (!string.IsNullOrEmpty(currentListTitle))
                     {
                         // Write the information about large lists to the inventory CSV file
@@ -281,12 +294,54 @@ namespace MNIT.Inventory
             return qry;
         }
 
+        public static CamlQuery CreateCheckedOutFilesQuery()
+        {
+            var qry = new CamlQuery();
+            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><IsNotNull><FieldRef Name='CheckoutUser' /></IsNotNull></Where></Query></View>";
+            //qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
+            return qry;
+        }
 
-        public static void InventoryListItems(string siteAddress, string listTitle, int rowLimit)
+        public static CamlQuery CreateCheckedInFilesQuery()
+        {
+            var qry = new CamlQuery();
+            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"CheckoutUser\" LookupId=\"TRUE\" /><Value Type=\"int\">0</Value></Eq></Where></Query></View>";
+            //qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
+            return qry;
+        }
+
+
+        public static void InventoryListItems(string siteAddress, string listTitle, int rowLimit, Utils.ActingUser actingUser)
         {
             ClientContext ctx = new ClientContext(siteAddress);
-            List list = ctx.Web.Lists.GetByTitle(listTitle); 
-            ctx.Load(list);
+            Web currentWeb = ctx.Web;
+            int lowerId = -1;
+            int upperId = rowLimit;
+            List<string> list = new List<string>();
+
+
+
+
+
+            if (string.IsNullOrEmpty(actingUser.UserLoginName))
+            {
+                ctx.Credentials = CredentialCache.DefaultCredentials;
+            }
+            else
+            {
+                if (actingUser.UserLoginName.IndexOf("@") != -1)
+                {
+                    ctx.Credentials = new SharePointOnlineCredentials(actingUser.UserLoginName,
+                        actingUser.UserPassword);
+                }
+                else
+                {
+                    ctx.Credentials = new NetworkCredential(actingUser.UserLoginName, actingUser.UserPassword,
+                        actingUser.UserDomain);
+                }
+            }
+            List currentList = currentWeb.Lists.GetByTitle(listTitle); 
+            ctx.Load(currentList);
             ctx.ExecuteQuery();
             ListItemCollectionPosition itemPosition = null;
             int largeCheckedInCount = 0;
@@ -299,100 +354,124 @@ namespace MNIT.Inventory
                         <View Scope='RecursiveAll'>
                             <Query>
                                 <Where>
-                                    <Eq>
-                                        <FieldRef Name='FSObjType' />
-                                        <Value Type='Integer'>0</Value>
-                                    </Eq>
+	                              <And>
+		                              <And>
+		                                <Gt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{0}</Value></Gt>
+			                            <Lt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{1}</Value></Lt>
+		                              </And>
+                                        <Eq>
+                                            <FieldRef Name='FSObjType' />
+                                            <Value Type='Integer'>0</Value>
+                                        </Eq>
+                                    </And>
                                 </Where>
                             </Query>
                             <ViewFields>
                                 <FieldRef Name='Title' />
                             </ViewFields>
-                            <RowLimit>{0}</RowLimit>
-                        </View>", rowLimit);
+                            <RowLimit>{2}</RowLimit>
+                        </View>", lowerId, upperId, rowLimit);
                 //camlQuery.ViewXml = "<View>" + Constants.vbCr + Constants.vbLf + "<ViewFields>" + Constants.vbCr + Constants.vbLf + "<FieldRef Name='Id'/><FieldRef Name='Title'/><FieldRef Name='Serial_No'/><FieldRef Name='CRM_ID'/>" + Constants.vbCr + Constants.vbLf + "</ViewFields>" + Constants.vbCr + Constants.vbLf + "<RowLimit>2201</RowLimit>" + Constants.vbCr + Constants.vbLf + "</View>";
                 camlQuery.ViewXml = viewXml;
-                ListItemCollection listItems = list.GetItems(camlQuery);
+                ListItemCollection listItems = currentList.GetItems(camlQuery);
                 ctx.Load(listItems);
                 ctx.ExecuteQuery();
                 itemPosition = listItems.ListItemCollectionPosition;
                 foreach (ListItem listItem in listItems)
                 {
-                    //ctx.Load(listItem, li => li.DisplayName);
+                    //// need to see if we need to run query to get ID
+                    //ctx.Load(listItem, li => li.Id);
                     //ctx.ExecuteQuery();
-                    File file = listItem.File;
-                    ctx.Load(file, f => f.CheckOutType, f => f.Name);
-                    ctx.ExecuteQuery();
-                    //listItemCount++;
-                    if (file.CheckOutType.ToString() == "None")
+                    try
                     {
-                        //checkedInCount++;
-                        largeCheckedInCount++;
+                        list.Add(listItem.Id.ToString());
                     }
-                    else
+                    catch (Exception ex31Exception)
                     {
-                        //checkedOutCount++;
+                        Console.WriteLine(ex31Exception.Message);
                     }
-                    //Console.WriteLine("Item Title: {0} Checked Out Type: {1}", listItem["Title"], file.CheckOutType);
+                    //// try to get the file of each list item, and see what its checked out status is
+                    //File file = listItem.File;
+                    //ctx.Load(file, f => f.CheckOutType, f => f.Name);
+                    //ctx.ExecuteQuery();
+                    //if (file.CheckOutType.ToString() == "None")
+                    //{
+                    //    largeCheckedInCount++;
+                    //}
                 }
+                lowerId += rowLimit;
+                upperId += rowLimit;
+                Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
             }
             while (itemPosition != null);
-            //Console.WriteLine(itemPosition.PagingInfo);
+
+            foreach (var line in list)
+            {
+                string listFilePath = "C:\\Temp\\LargeListIds.csv";
+                // Write the information about large lists to the inventory CSV file
+                string[] passingListObject = new string[2];
+                passingListObject[0] = listFilePath;
+                passingListObject[1] = line;
+                WriteReports.WriteText(passingListObject);
+            }
+
             Utils.SpinAnimation.Stop();
             Console.WriteLine();
-            Console.WriteLine("Could not work with " + listTitle + ", because it is a large list.");
+            Console.WriteLine("Could not more details for " + listTitle + ", because it is a large list.");
             Utils.SpinAnimation.Start();
         }
 
-        private async Task<List<ListItem>> GetListItems(string siteAddress, string listTitle, int rowLimit)
-        {
-            List<ListItem> items = new List<ListItem>();
-            ClientContext ctx = new ClientContext(siteAddress);
-            List list = ctx.Web.Lists.GetByTitle(listTitle);
-            //int rowLimit = 100;
-            ListItemCollectionPosition position = null;
+//        private async Task<List<ListItem>> GetListItems(string siteAddress, string listTitle, int rowLimit)
+//        {
+//            List<ListItem> items = new List<ListItem>();
+//            ClientContext ctx = new ClientContext(siteAddress);
+//            List list = ctx.Web.Lists.GetByTitle(listTitle);
+//            //int rowLimit = 100;
+//            ListItemCollectionPosition position = null;
 
-            string viewXml = string.Format(@"
-                        <View Scope='RecursiveAll'>
-                            <Query>
-                                <Where>
-                                    <Eq>
-                                        <FieldRef Name='FSObjType' />
-                                        <Value Type='Integer'>0</Value>
-                                    </Eq>
-                                </Where>
-                            </Query>
-                            <ViewFields>
-                                <FieldRef Name='Title' />
-                            </ViewFields>
-                            <RowLimit>{0}</RowLimit>
-                        </View>", rowLimit);
+//            string viewXml = string.Format(@"
+//                        <View Scope='RecursiveAll'>
+//                            <Query>
+//                                <Where>
+//                                    <Eq>
+//                                        <FieldRef Name='FSObjType' />
+//                                        <Value Type='Integer'>0</Value>
+//                                    </Eq>
+//                                </Where>
+//                            </Query>
+//                            <ViewFields>
+//                                <FieldRef Name='Title' />
+//                            </ViewFields>
+//                            <RowLimit>{0}</RowLimit>
+//                        </View>", rowLimit);
 
-            var camlQuery = new CamlQuery();
-            camlQuery.ViewXml = viewXml;
+//            var camlQuery = new CamlQuery();
+//            camlQuery.ViewXml = viewXml;
 
-            do
-            {
-                ListItemCollection listItems = null;
-                if (listItems != null && listItems.ListItemCollectionPosition != null)
-                {
-                    camlQuery.ListItemCollectionPosition = listItems.ListItemCollectionPosition;
-                }
+//            do
+//            {
+//                ListItemCollection listItems = null;
+//                if (listItems != null && listItems.ListItemCollectionPosition != null)
+//                {
+//                    camlQuery.ListItemCollectionPosition = listItems.ListItemCollectionPosition;
+//                }
 
-                listItems = list.GetItems(camlQuery);
-                ctx.Load(listItems);
-                //Task contextTask = ctx.ExecuteQueryAsync();
-                //await Task.WhenAll(contextTask);
+//                listItems = list.GetItems(camlQuery);
+//                ctx.Load(listItems);
+//                //Task contextTask = ctx.ExecuteQueryAsync();
+//                //await Task.WhenAll(contextTask);
 
-                //Task contextTask = ctx.ExecuteQuery();
-                ctx.ExecuteQuery();
-                await Task.WhenAll();
-                position = listItems.ListItemCollectionPosition;
-                items.AddRange(listItems.ToList());
-            }
-            while (position != null);
-            return items;
-        }
+//                //Task contextTask = ctx.ExecuteQuery();
+//                ctx.ExecuteQuery();
+//                await Task.WhenAll();
+//                position = listItems.ListItemCollectionPosition;
+//                items.AddRange(listItems.ToList());
+//            }
+//            while (position != null);
+//            return items;
+//        }
+
+
 
 //        private async Task<List<ListItem>> GetListItems(string siteAddress, string listTitle)
 //        {

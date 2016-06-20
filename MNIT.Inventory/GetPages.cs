@@ -93,6 +93,7 @@ namespace MNIT.Inventory
                         pageLayoutUrl.ToLower().IndexOf("advancedsearchresults") > -1 ||
                         pageLayoutUrl.ToLower().IndexOf("articlelinks") > -1 ||
                         pageLayoutUrl.ToLower().IndexOf("articleright") > -1 ||
+                        pageLayoutUrl.ToLower().IndexOf("articleleft") > -1 ||
                         pageLayoutUrl.ToLower().IndexOf("blankwebpartpage") > -1 ||
                         pageLayoutUrl.ToLower().IndexOf("defaultlayout") > -1 ||
                         pageLayoutUrl.ToLower().IndexOf("enterprisewiki") > -1 ||
