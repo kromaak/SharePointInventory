@@ -85,7 +85,6 @@ namespace MNIT.Inventory
                     // Build the Web Application Name
                     string webApplication = urlDomain.Split('.')[0];
 
-
                     // counter including folders
                     int totalListItemCount = tmpList.ItemCount;
                     // Get item count and compare to checked in document count
@@ -103,43 +102,35 @@ namespace MNIT.Inventory
                     string manageListUrl = "";
                     int largeListDiv = 3;
 
-                    // Add the list to the stream if it has 5000 list items or more
-                    // Run the function to query large lists needs to be moved here to further optimize
+                    // Unlimited Versioning Check
+                    if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
+                        tmpList.EnableMinorVersions == true)
+                    {
+
+                        if ((tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10) ||
+                            (tmpList.MajorWithMinorVersionsLimit == 0 || tmpList.MajorWithMinorVersionsLimit > 10))
+                        {
+                            unlimitedVerCounter++;
+                            unlimitedVersions = String.Format("Major:{0};Minor:{1}", tmpList.MajorVersionLimit,
+                                tmpList.MajorWithMinorVersionsLimit);
+                            currentListTitle = tmpList.Title;
+                        }
+                    }
+
+                    if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
+                        tmpList.EnableMinorVersions != true)
+                    {
+                        if (tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10)
+                        {
+                            unlimitedVerCounter++;
+                            unlimitedVersions = String.Format("Major:{0}", tmpList.MajorVersionLimit);
+                            currentListTitle = tmpList.Title;
+                        }
+                    }
+
                     if (totalListItemCount < 5000)
                     {
-                        //if (tmpList.ItemCount > 4999)
-                        //{
-                        //    largeListCounter++;
-                        //    strTotalListItemCount = tmpList.ItemCount.ToString();
-                        //    currentListTitle = tmpList.Title;
-                        //}
-
-                        // Unlimited Versioning Check
-                        if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
-                            tmpList.EnableMinorVersions == true)
-                        {
-
-                            if ((tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10) ||
-                                (tmpList.MajorWithMinorVersionsLimit == 0 || tmpList.MajorWithMinorVersionsLimit > 10))
-                            {
-                                unlimitedVerCounter++;
-                                unlimitedVersions = String.Format("Major:{0};Minor:{1}", tmpList.MajorVersionLimit,
-                                    tmpList.MajorWithMinorVersionsLimit);
-                                currentListTitle = tmpList.Title;
-                            }
-                        }
-
-                        if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&
-                            tmpList.EnableMinorVersions != true)
-                        {
-                            if (tmpList.MajorVersionLimit == 0 || tmpList.MajorVersionLimit > 10)
-                            {
-                                unlimitedVerCounter++;
-                                unlimitedVersions = String.Format("Major:{0}", tmpList.MajorVersionLimit);
-                                currentListTitle = tmpList.Title;
-                            }
-                        }
-
+                        // Check regular list configuration for problematic settings
                         if (tmpList.BaseType == BaseType.DocumentLibrary)
                         {
                             // Get a count of folders to be removed from the total list item count for comparing to checked in docs
@@ -149,7 +140,7 @@ namespace MNIT.Inventory
                             folderCount = folders.Count;
 
                             // Get the checked in files from the list
-                            var itemsCheckedIn = tmpList.GetItems(CreateCheckedOutFilesQuery());
+                            var itemsCheckedIn = tmpList.GetItems(CreateCheckedInFilesQuery());
                             ctx.Load(itemsCheckedIn, icol => icol.Include(i => i.File, i => i.DisplayName));
                             ctx.ExecuteQuery();
                             checkedInCount = itemsCheckedIn.Count;
@@ -160,32 +151,6 @@ namespace MNIT.Inventory
                             ctx.Load(itemsCheckedOut, icol => icol.Include(i => i.File, i => i.DisplayName));
                             ctx.ExecuteQuery();
                             checkedOutCount = itemsCheckedOut.Count;
-                            //var items = tmpList.GetItems(CreateAllFilesQuery());
-                            //ctx.Load(items, icol => icol.Include(i => i.File, i => i.DisplayName));
-                            //ctx.ExecuteQuery();
-                            //foreach (var listItem in items)
-                            //{
-                            //    File file = listItem.File;
-                            //    ctx.Load(file, f => f.CheckOutType);
-                            //    ctx.ExecuteQuery();
-                            //    listItemCount++;
-                            //    if (file.CheckOutType.ToString() == "None")
-                            //    {
-                            //        checkedInCount++;
-                            //        //if (listItem["Thumbnail"].ToString().Length > 0)
-                            //        //{
-                            //        //}
-                            //        //else
-                            //        //{
-                            //        //    checkedInCount++;
-                            //        //}
-                            //    }
-                            //    else
-                            //    {
-                            //        checkedOutCount++;
-                            //    }
-                            //}
-                            //Console.WriteLine(tmpList.Title + " checked out count " + checkedOutCount);
 
                             // Calculate the list item count without the folders
                             listItemCount = Math.Abs(totalListItemCount - folderCount);
@@ -234,12 +199,49 @@ namespace MNIT.Inventory
                     }
                     else
                     {
+                        // Check large list configuration for problematic settings
                         largeListCounter++;
-                        strTotalListItemCount = tmpList.ItemCount.ToString();
+                        totalListItemCount = tmpList.ItemCount;
+                        strTotalListItemCount = totalListItemCount.ToString();
                         currentListTitle = tmpList.Title;
-                        InventoryListItems(siteAddress, currentListTitle, 1000, actingUser);
-                    }
 
+                        string qryType = "";
+                        // Gather information about large lists
+                        qryType = "folders";
+                        folderCount = InventoryLargeLists(siteAddress, currentListTitle, qryType, 200, actingUser);
+                        // checked in items
+                        qryType = "checkedin";
+                        checkedInCount = InventoryLargeLists(siteAddress, currentListTitle, qryType, 200, actingUser);
+                        // checked out items
+                        qryType = "checkedout";
+                        checkedOutCount = InventoryLargeLists(siteAddress, currentListTitle, qryType, 200, actingUser);
+
+                        // Calculate the list item count without the folders
+                        listItemCount = Math.Abs(totalListItemCount - folderCount);
+                        // Add the list title so it gets included in the detailed report
+                        if (checkedInCount > 0 && checkedInCount != listItemCount)
+                        {
+                            // prepare the non folder list item count
+                            strFileCount = listItemCount.ToString();
+                            // prepare the folder count
+                            strFolderCount = folderCount.ToString();
+                            // prepare the Checked In count
+                            strCheckedInCount = checkedInCount.ToString();
+                            // prepare the Checked Out count
+                            strCheckedOutCount = checkedOutCount.ToString();
+                            // prepare the Never been checked in count
+                            neverCheckedInCount = Math.Abs(listItemCount - checkedInCount - checkedOutCount);
+
+                            strNeverCheckedInCount = neverCheckedInCount.ToString();
+                            if (neverCheckedInCount > 0)
+                            {
+                                manageListUrl = subWeb.Url + "/_layouts/15/ManageCheckedOutFiles.aspx?List={" +
+                                                tmpList.Id + "}";
+                            }
+                            // add to the site collection checked out counter
+                            siteCollCheckedOut += checkedOutCount + neverCheckedInCount;
+                        }
+                    }
 
                     if (!string.IsNullOrEmpty(currentListTitle))
                     {
@@ -286,42 +288,14 @@ namespace MNIT.Inventory
             }
         }
 
-        public static CamlQuery CreateAllFilesQuery()
-        {
-            var qry = new CamlQuery();
-            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query></View>";
-            //qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
-            return qry;
-        }
-
-        public static CamlQuery CreateCheckedOutFilesQuery()
-        {
-            var qry = new CamlQuery();
-            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><IsNotNull><FieldRef Name='CheckoutUser' /></IsNotNull></Where></Query></View>";
-            //qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
-            return qry;
-        }
-
-        public static CamlQuery CreateCheckedInFilesQuery()
-        {
-            var qry = new CamlQuery();
-            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"CheckoutUser\" LookupId=\"TRUE\" /><Value Type=\"int\">0</Value></Eq></Where></Query></View>";
-            //qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query><RowLimit></RowLimit></View>";
-            return qry;
-        }
-
-
-        public static void InventoryListItems(string siteAddress, string listTitle, int rowLimit, Utils.ActingUser actingUser)
+        public static int InventoryLargeLists(string siteAddress, string listTitle, string qryType, int rowLimit, Utils.ActingUser actingUser)
         {
             ClientContext ctx = new ClientContext(siteAddress);
             Web currentWeb = ctx.Web;
+            int maxListItems = 5000;
             int lowerId = -1;
-            int upperId = rowLimit;
+            int upperId = maxListItems;
             List<string> list = new List<string>();
-
-
-
-
 
             if (string.IsNullOrEmpty(actingUser.UserLoginName))
             {
@@ -340,17 +314,160 @@ namespace MNIT.Inventory
                         actingUser.UserDomain);
                 }
             }
-            List currentList = currentWeb.Lists.GetByTitle(listTitle); 
-            ctx.Load(currentList);
+            List tmpList = currentWeb.Lists.GetByTitle(listTitle);
+            ctx.Load(tmpList);
             ctx.ExecuteQuery();
-            ListItemCollectionPosition itemPosition = null;
-            int largeCheckedInCount = 0;
-            do
-            {
-                CamlQuery camlQuery = new CamlQuery();
-                camlQuery.ListItemCollectionPosition = itemPosition;
 
-                string viewXml = string.Format(@"
+            int itemCount = 0;
+            int runs = 0;
+            int paginations = 1;
+            if (tmpList.BaseType == BaseType.DocumentLibrary)
+            {
+                // get the number of times the query should be run against this library
+                int neededRuns = (tmpList.ItemCount / 5000)+1;
+                //Console.WriteLine("Needed runs according to max list limit " + neededRuns);
+                // Query for folders in the large list
+                if (qryType == "folders")
+                {
+                    // 0 out the itemPosition
+                    ListItemCollectionPosition itemPosition = null;
+                    for (int nr = 0; nr < neededRuns; nr++)
+                    {
+                        do
+                        {
+                            CamlQuery camlQuery = new CamlQuery();
+                            camlQuery.ListItemCollectionPosition = itemPosition;
+
+                            // Get a count of folders to be removed from the total list item count for comparing to checked in docs
+                            var listObjects = tmpList.GetItems(CreateLargeFoldersQuery(lowerId, upperId, rowLimit));
+                            ctx.Load(listObjects, icol => icol.ListItemCollectionPosition,
+                                icol => icol.Include(i => i.File));
+                            ctx.ExecuteQuery();
+                            itemCount += listObjects.Count;
+
+                            itemPosition = listObjects.ListItemCollectionPosition;
+                            lowerId += maxListItems;
+                            upperId += maxListItems;
+                            //Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
+                            paginations++;
+                        } while (itemPosition != null);
+                        runs++;
+                    }
+                }
+                // Query for checked in docs in the large list
+                if (qryType == "checkedin")
+                {
+                    // 0 out the itemPosition
+                    ListItemCollectionPosition itemPosition = null;
+                    for (int nr = 0; nr < neededRuns; nr++)
+                    {
+                        do
+                        {
+                            CamlQuery camlQuery = new CamlQuery();
+                            camlQuery.ListItemCollectionPosition = itemPosition;
+                            // Get a count of checked in docs
+                            var listObjects =
+                                tmpList.GetItems(CreateLargeCheckedInFilesQuery(lowerId, upperId, rowLimit));
+                            ctx.Load(listObjects, icol => icol.ListItemCollectionPosition,
+                                icol => icol.Include(i => i.File));
+                            ctx.ExecuteQuery();
+                            itemCount += listObjects.Count;
+
+                            itemPosition = listObjects.ListItemCollectionPosition;
+                            lowerId += maxListItems;
+                            upperId += maxListItems;
+                            //Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
+                            paginations++;
+                        } while (itemPosition != null);
+                        runs++;
+                    }
+                }
+                // Query for checked out docs in the large list
+                if (qryType == "checkedout")
+                {
+                    // 0 out the itemPosition
+                    ListItemCollectionPosition itemPosition = null;
+                    for (int nr = 0; nr < neededRuns; nr++)
+                    {
+                        do
+                        {
+                            CamlQuery camlQuery = new CamlQuery();
+                            camlQuery.ListItemCollectionPosition = itemPosition;
+                            // Get a count of checked out docs
+                            var listObjects =
+                                tmpList.GetItems(CreateLargeCheckedOutFilesQuery(lowerId, upperId, rowLimit));
+                            ctx.Load(listObjects, icol => icol.ListItemCollectionPosition,
+                                icol => icol.Include(i => i.File));
+                            ctx.ExecuteQuery();
+                            itemCount += listObjects.Count;
+
+                            itemPosition = listObjects.ListItemCollectionPosition;
+                            lowerId += maxListItems;
+                            upperId += maxListItems;
+                            //Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
+                            paginations++;
+                        } while (itemPosition != null);
+                        runs++;
+                    }
+                }
+            }
+            //Console.WriteLine("{0} list has {1} {2} objects, paginated {3}, ran {4} times", listTitle, itemCount, qryType, paginations, runs);
+            return itemCount;
+        }
+
+
+        public static CamlQuery CreateAllFoldersQuery()
+        {
+            // Create the list query for Folders
+            // have used this <Eq><FieldRef Name='ContentType' /><Value Type='Text'>Folder</Value></Eq>
+            // but this seems to be more effective <Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>1</Value></Eq>
+            var qry = new CamlQuery();
+            qry.ViewXml = "<View Scope='RecursiveAll'><Query><Where>" +
+                          "<Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>1</Value></Eq>" +
+                          "</Where></Query></View>";
+            return qry;
+        }
+
+        //public static CamlQuery CreateAllFilesQuery()
+        //{
+        //    var qry = new CamlQuery();
+        //    qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"FSObjType\" /><Value Type=\"Integer\">0</Value></Eq></Where></Query></View>";
+        //    return qry;
+        //}
+
+        public static CamlQuery CreateCheckedInFilesQuery()
+        {
+            // Create the list query for checked IN files
+            var qry = new CamlQuery();
+            qry.ViewXml = "<View Scope='RecursiveAll'><Query><Where>" +
+                              "<And>" +
+                                "<IsNull><FieldRef Name='CheckoutUser' LookupId='TRUE' /></IsNull>" +
+                                "<Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>0</Value></Eq>" +
+                              "</And>" +
+                          "</Where></Query></View>";
+            return qry;
+        }
+
+        public static CamlQuery CreateCheckedOutFilesQuery()
+        {
+            // Create the list query for checked OUT files
+            var qry = new CamlQuery();
+            qry.ViewXml = "<View Scope='RecursiveAll'><Query><Where>" +
+                              "<And>" +
+                                "<IsNotNull><FieldRef Name='CheckoutUser' LookupId='TRUE' /></IsNotNull>" +
+                                "<Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>0</Value></Eq>" +
+                              "</And>" +
+                          "</Where></Query></View>";
+            return qry;
+        }
+
+        public static CamlQuery CreateLargeFoldersQuery(int lowerId, int upperId, int rowLimit)
+        {
+            // Create the large list query for Folders
+            // <Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>1</Value></Eq>
+            // <Eq><FieldRef Name='ContentType'></FieldRef><Value Type='Text'>Folder</Value></Eq>
+            var qry = new CamlQuery();
+            qry.ViewXml = string.Format(@"
                         <View Scope='RecursiveAll'>
                             <Query>
                                 <Where>
@@ -359,67 +476,204 @@ namespace MNIT.Inventory
 		                                <Gt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{0}</Value></Gt>
 			                            <Lt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{1}</Value></Lt>
 		                              </And>
-                                        <Eq>
-                                            <FieldRef Name='FSObjType' />
-                                            <Value Type='Integer'>0</Value>
-                                        </Eq>
+                                        <Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>1</Value></Eq>
                                     </And>
                                 </Where>
                             </Query>
                             <ViewFields>
                                 <FieldRef Name='Title' />
                             </ViewFields>
-                            <RowLimit>{2}</RowLimit>
-                        </View>", lowerId, upperId, rowLimit);
-                //camlQuery.ViewXml = "<View>" + Constants.vbCr + Constants.vbLf + "<ViewFields>" + Constants.vbCr + Constants.vbLf + "<FieldRef Name='Id'/><FieldRef Name='Title'/><FieldRef Name='Serial_No'/><FieldRef Name='CRM_ID'/>" + Constants.vbCr + Constants.vbLf + "</ViewFields>" + Constants.vbCr + Constants.vbLf + "<RowLimit>2201</RowLimit>" + Constants.vbCr + Constants.vbLf + "</View>";
-                camlQuery.ViewXml = viewXml;
-                ListItemCollection listItems = currentList.GetItems(camlQuery);
-                ctx.Load(listItems);
-                ctx.ExecuteQuery();
-                itemPosition = listItems.ListItemCollectionPosition;
-                foreach (ListItem listItem in listItems)
-                {
-                    //// need to see if we need to run query to get ID
-                    //ctx.Load(listItem, li => li.Id);
-                    //ctx.ExecuteQuery();
-                    try
-                    {
-                        list.Add(listItem.Id.ToString());
-                    }
-                    catch (Exception ex31Exception)
-                    {
-                        Console.WriteLine(ex31Exception.Message);
-                    }
-                    //// try to get the file of each list item, and see what its checked out status is
-                    //File file = listItem.File;
-                    //ctx.Load(file, f => f.CheckOutType, f => f.Name);
-                    //ctx.ExecuteQuery();
-                    //if (file.CheckOutType.ToString() == "None")
-                    //{
-                    //    largeCheckedInCount++;
-                    //}
-                }
-                lowerId += rowLimit;
-                upperId += rowLimit;
-                Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
-            }
-            while (itemPosition != null);
-
-            foreach (var line in list)
-            {
-                string listFilePath = "C:\\Temp\\LargeListIds.csv";
-                // Write the information about large lists to the inventory CSV file
-                string[] passingListObject = new string[2];
-                passingListObject[0] = listFilePath;
-                passingListObject[1] = line;
-                WriteReports.WriteText(passingListObject);
-            }
-
-            Utils.SpinAnimation.Stop();
-            Console.WriteLine();
-            Console.WriteLine("Could not more details for " + listTitle + ", because it is a large list.");
-            Utils.SpinAnimation.Start();
+                        </View>", lowerId, upperId);
+            return qry;
         }
+
+        public static CamlQuery CreateLargeCheckedInFilesQuery(int lowerId, int upperId, int rowLimit)
+        {
+            // Create the large list query for checked IN files
+            // <IsNull><FieldRef Name='CheckoutUser' LookupId='TRUE'></FieldRef></IsNull>
+            // between /viewfields and /view <RowLimit>{2}</RowLimit> but took it out because it forces the item position to be null prematurely
+            var qry = new CamlQuery();
+            qry.ViewXml = string.Format(@"
+                        <View Scope='RecursiveAll'>
+                            <Query>
+                                <Where>
+	                              <And>
+		                              <And>
+		                                <Gt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{0}</Value></Gt>
+			                            <Lt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{1}</Value></Lt>
+		                              </And>
+		                              <And>
+                                        <IsNull><FieldRef Name='CheckoutUser' LookupId='TRUE'></FieldRef></IsNull>
+			                            <Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>0</Value></Eq>
+		                              </And>
+                                    </And>
+                                </Where>
+                            </Query>
+                            <ViewFields>
+                                <FieldRef Name='Title' />
+                            </ViewFields>
+                        </View>", lowerId, upperId);
+            return qry;
+        }
+
+        public static CamlQuery CreateLargeCheckedOutFilesQuery(int lowerId, int upperId, int rowLimit)
+        {
+            // Create the large list query for checked OUT files
+            var qry = new CamlQuery();
+            qry.ViewXml = string.Format(@"
+                        <View Scope='RecursiveAll'>
+                            <Query>
+                                <Where>
+	                              <And>
+		                              <And>
+		                                <Gt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{0}</Value></Gt>
+			                            <Lt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{1}</Value></Lt>
+		                              </And>
+		                              <And>
+                                        <IsNotNull>
+                                            <FieldRef Name='CheckoutUser' LookupId='TRUE'></FieldRef>
+                                        </IsNotNull>
+			                            <Eq><FieldRef Name='FSObjType' /><Value Type='Integer'>0</Value></Eq>
+		                              </And>
+                                    </And>
+                                </Where>
+                            </Query>
+                            <ViewFields>
+                                <FieldRef Name='Title' />
+                            </ViewFields>
+                        </View>", lowerId, upperId);
+            return qry;
+        }
+
+//        public static void InventoryListItems(string siteAddress, string listTitle, int rowLimit, Utils.ActingUser actingUser)
+//        {
+//            ClientContext ctx = new ClientContext(siteAddress);
+//            Web currentWeb = ctx.Web;
+//            int lowerId = -1;
+//            int upperId = rowLimit;
+//            List<string> list = new List<string>();
+
+//            if (string.IsNullOrEmpty(actingUser.UserLoginName))
+//            {
+//                ctx.Credentials = CredentialCache.DefaultCredentials;
+//            }
+//            else
+//            {
+//                if (actingUser.UserLoginName.IndexOf("@") != -1)
+//                {
+//                    ctx.Credentials = new SharePointOnlineCredentials(actingUser.UserLoginName,
+//                        actingUser.UserPassword);
+//                }
+//                else
+//                {
+//                    ctx.Credentials = new NetworkCredential(actingUser.UserLoginName, actingUser.UserPassword,
+//                        actingUser.UserDomain);
+//                }
+//            }
+//            List tmpList = currentWeb.Lists.GetByTitle(listTitle); 
+//            ctx.Load(tmpList);
+//            ctx.ExecuteQuery();
+
+//            int folderCount = 0;
+//            int checkedInCount = 0;
+//            int checkedOutCount = 0;
+//            if (tmpList.BaseType == BaseType.DocumentLibrary)
+//            {
+//                // Get a count of folders to be removed from the total list item count for comparing to checked in docs
+//                var folders = tmpList.GetItems(CreateAllFoldersQuery());
+//                ctx.Load(folders, icol => icol.Include(i => i.File));
+//                ctx.ExecuteQuery();
+//                folderCount = folders.Count;
+
+//                // Get the checked in files from the list
+//                var itemsCheckedIn = tmpList.GetItems(CreateCheckedOutFilesQuery());
+//                ctx.Load(itemsCheckedIn, icol => icol.Include(i => i.File, i => i.DisplayName));
+//                ctx.ExecuteQuery();
+//                checkedInCount = itemsCheckedIn.Count;
+
+
+//                // Get the checked out files from the list
+//                var itemsCheckedOut = tmpList.GetItems(CreateCheckedOutFilesQuery());
+//                ctx.Load(itemsCheckedOut, icol => icol.Include(i => i.File, i => i.DisplayName));
+//                ctx.ExecuteQuery();
+//                checkedOutCount = itemsCheckedOut.Count;
+//            }
+
+//            ListItemCollectionPosition itemPosition = null;
+//            do
+//            {
+//                CamlQuery camlQuery = new CamlQuery();
+//                camlQuery.ListItemCollectionPosition = itemPosition;
+
+//                string viewXml = string.Format(@"
+//                        <View Scope='RecursiveAll'>
+//                            <Query>
+//                                <Where>
+//	                              <And>
+//		                              <And>
+//		                                <Gt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{0}</Value></Gt>
+//			                            <Lt><FieldRef Name='ID'></FieldRef><Value Type='Number'>{1}</Value></Lt>
+//		                              </And>
+//                                        <Eq>
+//                                            <FieldRef Name='FSObjType' />
+//                                            <Value Type='Integer'>0</Value>
+//                                        </Eq>
+//                                    </And>
+//                                </Where>
+//                            </Query>
+//                            <ViewFields>
+//                                <FieldRef Name='Title' />
+//                            </ViewFields>
+//                            <RowLimit>{2}</RowLimit>
+//                        </View>", lowerId, upperId, rowLimit);
+
+//                camlQuery.ViewXml = viewXml;
+//                ListItemCollection listItems = tmpList.GetItems(camlQuery);
+//                ctx.Load(listItems);
+//                ctx.ExecuteQuery();
+//                itemPosition = listItems.ListItemCollectionPosition;
+//                foreach (ListItem listItem in listItems)
+//                {
+//                    //// need to see if we need to run query to get ID
+//                    //ctx.Load(listItem, li => li.Id);
+//                    //ctx.ExecuteQuery();
+//                    try
+//                    {
+//                        list.Add(listItem.Id.ToString());
+//                    }
+//                    catch (Exception ex31Exception)
+//                    {
+//                        Console.WriteLine(ex31Exception.Message);
+//                    }
+//                    //// try to get the file of each list item, and see what its checked out status is
+//                    //File file = listItem.File;
+//                    //ctx.Load(file, f => f.CheckOutType, f => f.Name);
+//                    //ctx.ExecuteQuery();
+//                    //if (file.CheckOutType.ToString() == "None")
+//                    //{
+//                    //    largeCheckedInCount++;
+//                    //}
+//                }
+//                lowerId += rowLimit;
+//                upperId += rowLimit;
+//                Console.WriteLine("start row{0}  end row{1}", lowerId, upperId);
+//            }
+//            while (itemPosition != null);
+
+//            foreach (var line in list)
+//            {
+//                string listFilePath = "C:\\Temp\\LargeListIds.csv";
+//                // Write the information about large lists to the inventory CSV file
+//                string[] passingListObject = new string[2];
+//                passingListObject[0] = listFilePath;
+//                passingListObject[1] = line;
+//                WriteReports.WriteText(passingListObject);
+//            }
+//            //Utils.SpinAnimation.Stop();
+//            //Console.WriteLine();
+//            //Console.WriteLine("Could not retrieve any more details for " + listTitle + ", because it is a large list.");
+//            //Utils.SpinAnimation.Start();
+//        }
 
 //        private async Task<List<ListItem>> GetListItems(string siteAddress, string listTitle, int rowLimit)
 //        {
@@ -471,8 +725,6 @@ namespace MNIT.Inventory
 //            return items;
 //        }
 
-
-
 //        private async Task<List<ListItem>> GetListItems(string siteAddress, string listTitle)
 //        {
 //            List<ListItem> items = new List<ListItem>();
@@ -523,41 +775,9 @@ namespace MNIT.Inventory
 //            return items;
 //        }
 
-
         public static void InventoryCheckedOut()
         {
             
-        } 
-
-        public static void DivideLargeList(int itemCount, int divisor)
-        {
-            Utils.SpinAnimation.Stop();
-            Console.WriteLine();
-            Console.WriteLine(@"Large List item count: {0}; Divisor: {1}", itemCount, divisor);
-            Utils.SpinAnimation.Start();
-            int remainderComparison = 300;
-            // Get the Quotient
-            int dividedCount = itemCount / divisor;
-            // If the Quotient is larger than 5000
-            if (dividedCount >= remainderComparison)
-            {
-                divisor++;
-                DivideLargeList(itemCount, divisor);
-            }
-            else
-            {
-                Utils.SpinAnimation.Stop();
-                Console.WriteLine();
-                Console.WriteLine(@"Large List Dividend count: {0}; Divisor: {1}; Quotient: {2}", itemCount, divisor, dividedCount);
-                Utils.SpinAnimation.Start();
-            }
-        }
-
-        public static CamlQuery CreateAllFoldersQuery()
-        {
-            var qry = new CamlQuery();
-            qry.ViewXml = "<View Scope=\"RecursiveAll\"><Query><Where><Eq><FieldRef Name=\"ContentType\" /><Value Type=\"Text\">Folder</Value></Eq></Where></Query></View>";
-            return qry;
         }
     }
 }
