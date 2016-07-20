@@ -87,6 +87,7 @@ namespace MNIT.Inventory
                 ctx.ExecuteQuery();
                 // Create a file to store Partner user info if Partners exist
                 string partnerCsvFilePath = csvFilePath.Replace("User", "PartnerUser");
+
                 foreach (User adGrp in adUserGroupColl)
                 {
                     ctx.Load(adGrp, adg => adg.PrincipalType);
@@ -103,7 +104,8 @@ namespace MNIT.Inventory
                                 passingAdObjects[0] = csvFilePath;
                                 passingAdObjects[1] = webApplication;
                                 passingAdObjects[2] = siteCollId;
-                                passingAdObjects[3] = subWeb.Url;
+                                //passingAdObjects[3] = subWeb.Url;
+                                passingAdObjects[3] = currentWebUrl;
                                 passingAdObjects[4] = adGroups;
                                 passingAdObjects[5] = permissionLevels;
                                 WriteReports.WriteText(passingAdObjects);
@@ -127,7 +129,8 @@ namespace MNIT.Inventory
                                 passingAdObjects[0] = csvFilePath;
                                 passingAdObjects[1] = webApplication;
                                 passingAdObjects[2] = siteCollId;
-                                passingAdObjects[3] = subWeb.Url;
+                                //passingAdObjects[3] = subWeb.Url;
+                                passingAdObjects[3] = currentWebUrl;
                                 passingAdObjects[4] = adGroups;
                                 passingAdObjects[5] = permissionLevels;
                                 WriteReports.WriteText(passingAdObjects);
@@ -146,7 +149,8 @@ namespace MNIT.Inventory
                                 passingPartnerAdObjects[0] = partnerCsvFilePath;
                                 passingPartnerAdObjects[1] = webApplication;
                                 passingPartnerAdObjects[2] = siteCollId;
-                                passingPartnerAdObjects[3] = subWeb.Url;
+                                //passingPartnerAdObjects[3] = subWeb.Url;
+                                passingPartnerAdObjects[3] = currentWebUrl;
                                 passingPartnerAdObjects[4] = adGrp.Title;
                                 passingPartnerAdObjects[5] = adGrp.LoginName;
                                 passingPartnerAdObjects[6] = adGrp.Email;
@@ -179,7 +183,8 @@ namespace MNIT.Inventory
                                     passingAdObjects[0] = csvFilePath;
                                     passingAdObjects[1] = webApplication;
                                     passingAdObjects[2] = siteCollId;
-                                    passingAdObjects[3] = subWeb.Url;
+                                    //passingAdObjects[3] = subWeb.Url;
+                                    passingAdObjects[3] = currentWebUrl;
                                     passingAdObjects[4] = adGroups;
                                     passingAdObjects[5] = permissionLevels;
                                     WriteReports.WriteText(passingAdObjects);
@@ -203,7 +208,8 @@ namespace MNIT.Inventory
                                     passingAdObjects[0] = csvFilePath;
                                     passingAdObjects[1] = webApplication;
                                     passingAdObjects[2] = siteCollId;
-                                    passingAdObjects[3] = subWeb.Url;
+                                    //passingAdObjects[3] = subWeb.Url;
+                                    passingAdObjects[3] = currentWebUrl;
                                     passingAdObjects[4] = adGroups;
                                     passingAdObjects[5] = permissionLevels;
                                     WriteReports.WriteText(passingAdObjects);
@@ -222,7 +228,8 @@ namespace MNIT.Inventory
                                     passingPartnerAdObjects[0] = partnerCsvFilePath;
                                     passingPartnerAdObjects[1] = webApplication;
                                     passingPartnerAdObjects[2] = siteCollId;
-                                    passingPartnerAdObjects[3] = subWeb.Url;
+                                    //passingPartnerAdObjects[3] = subWeb.Url;
+                                    passingPartnerAdObjects[3] = currentWebUrl;
                                     passingPartnerAdObjects[4] = siteUser.Title;
                                     passingPartnerAdObjects[5] = siteUser.LoginName;
                                     passingPartnerAdObjects[6] = siteUser.Email;

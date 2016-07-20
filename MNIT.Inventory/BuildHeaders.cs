@@ -2,7 +2,7 @@
 
 namespace MNIT.Inventory
 {
-    class BuildHeaders
+    public class BuildHeaders
     {
         public static void WriteReportHeaders(string[] args)
         {

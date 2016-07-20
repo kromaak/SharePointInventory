@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-
+using Microsoft.SharePoint.Client;
 using Utils = MNIT.Utilities;
 
 namespace MNIT.Inventory
 {
-    class ChooseReport
+    public class ChooseReport
     {
         // Runs Group Inventory
         public static void RunGroupInventory(string[] args, Utils.ActingUser actingUser)
@@ -19,11 +19,6 @@ namespace MNIT.Inventory
             // 3 = detailed report file
             string detailedGroupReportPath = args[2];
             // Read through the list of sites
-            //string[] readUrls = null;
-
-            //
-            // Read in a file line-by-line, and store it all in a List.
-            //
             List<string> list = new List<string>();
             try
             {
@@ -32,23 +27,16 @@ namespace MNIT.Inventory
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
-                        list.Add(line); // Add to list.
-                        //Console.WriteLine(line); // Write to console.
+                        list.Add(line);
                     }
                 }
             }
-            //try
-            //{
-            //    readUrls = System.IO.File.ReadAllLines(inputFile);
-            //}
             catch (Exception ex31Exception)
             {
                 Console.WriteLine(ex31Exception.Message);
             }
-            //string[] readUrls = System.IO.File.ReadAllLines(siteListFilePath + "SiteList.csv");
             int everyTen = 0;
             // For each site address in the CSV file
-            //foreach (string readCurrentLine in readUrls)
             foreach (string readCurrentLine in list)
             {
                 if (!string.IsNullOrEmpty(readCurrentLine.Trim()))
@@ -57,7 +45,24 @@ namespace MNIT.Inventory
                     everyTen++;
                     try
                     {
-                        //string adGroups = "\"";
+                        // Get Site information
+                        ClientContext ctx = new ClientContext(currentLine);
+                        Web subWeb = ctx.Web;
+                        Site siteCollection = ctx.Site;
+                        // Load web and web properties
+                        ctx.Load(subWeb, w => w.Webs, w => w.Url);
+                        // Execute Query against web
+                        ctx.ExecuteQuery();
+                        // find the SCAs or owners of the site collection
+                        ctx.Load(siteCollection, sc => sc.Id);
+                        ctx.ExecuteQuery();
+                        string currentWebUrl = subWeb.Url;
+                        Uri tempUri = new Uri(currentWebUrl);
+                        string urlDomain = tempUri.Host;
+                        // Build the Web Application Name
+                        string webApplication = urlDomain.Split('.')[0];
+                        string siteCollId = siteCollection.Id.ToString();
+
                         string adGroups = "";
                         string permissionLevels = "";
                         // Write the site URL every ten lines from CSV, to let the user know progress is being made
@@ -71,11 +76,13 @@ namespace MNIT.Inventory
                         // Run the SP Inventory AD Group function 
                         GetUsersAndGroups.InventoryAdGroups(currentLine, actingUser, ref adGroups, ref permissionLevels, action, detailedGroupReportPath);
                         // Write the Inventory information to the stream
-                        string[] passingGroupObject = new string[4];
+                        string[] passingGroupObject = new string[6];
                         passingGroupObject[0] = detailedGroupReportPath;
-                        passingGroupObject[1] = currentLine;
-                        passingGroupObject[2] = adGroups;
-                        passingGroupObject[3] = permissionLevels;
+                        passingGroupObject[1] = webApplication;
+                        passingGroupObject[2] = siteCollId;
+                        passingGroupObject[3] = currentLine;
+                        passingGroupObject[4] = adGroups;
+                        passingGroupObject[5] = permissionLevels;
                         WriteReports.WriteText(passingGroupObject);
                     }
                     catch (WebException webException)
@@ -110,11 +117,6 @@ namespace MNIT.Inventory
             // 2 = rollup report file
             string rollupInfoPathReportPath = args[2];
             // Read through the list of sites
-            //string[] readUrls = null;
-
-            //
-            // Read in a file line-by-line, and store it all in a List.
-            //
             List<string> list = new List<string>();
             try
             {
@@ -123,15 +125,10 @@ namespace MNIT.Inventory
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
-                        list.Add(line); // Add to list.
-                        //Console.WriteLine(line); // Write to console.
+                        list.Add(line);
                     }
                 }
             }
-            //try
-            //{
-            //    readUrls = System.IO.File.ReadAllLines(inputFile);
-            //}
             catch (Exception ex31Exception)
             {
                 Console.WriteLine(ex31Exception.Message);
@@ -209,11 +206,6 @@ namespace MNIT.Inventory
             // 2 = rollup report file
             string rollupListReportPath = args[2];
             // Read through the list of sites
-            //string[] readUrls = null;
-
-            //
-            // Read in a file line-by-line, and store it all in a List.
-            //
             List<string> list = new List<string>();
             try
             {
@@ -226,19 +218,12 @@ namespace MNIT.Inventory
                     }
                 }
             }
-            //try
-            //{
-            //    readUrls = System.IO.File.ReadAllLines(inputFile);
-            //}
             catch (Exception ex31Exception)
             {
                 Console.WriteLine(ex31Exception.Message);
             }
             int everyTen = 0;
             // For each site address in the CSV file
-            //if (readUrls != null)
-            //{
-            //foreach (string readCurrentLine in readUrls)
             foreach (string readCurrentLine in list)
                 {
                     if (!string.IsNullOrEmpty(readCurrentLine.Trim()))
@@ -311,14 +296,9 @@ namespace MNIT.Inventory
             string inputFile = args[0];
             // 1 = users or groups
             string action = args[1];
-            // 3 = detailed report file
+            // 2 = detailed report file
             string detailedUserReportPath = args[2];
             // Read through the list of sites
-            //string[] readUrls = null;
-
-            //
-            // Read in a file line-by-line, and store it all in a List.
-            //
             List<string> list = new List<string>();
             try
             {
@@ -331,15 +311,10 @@ namespace MNIT.Inventory
                     }
                 }
             }
-            //try
-            //{
-            //    readUrls = System.IO.File.ReadAllLines(inputFile);
-            //}
             catch (Exception ex31Exception)
             {
                 Console.WriteLine(ex31Exception.Message);
             }
-            //string[] readUrls = System.IO.File.ReadAllLines(siteListFilePath + "SiteList.csv");
             int everyTen = 0;
             // For each site address in the CSV file
             //foreach (string readCurrentLine in readUrls)
@@ -347,11 +322,29 @@ namespace MNIT.Inventory
             {
                 if (!string.IsNullOrEmpty(readCurrentLine.Trim()))
                 {
-                    string siteCollId = "";
+                    //string siteCollId = "";
                     string currentLine = readCurrentLine.Trim();
                     everyTen++;
                     try
                     {
+                        // Get Site information
+                        ClientContext ctx = new ClientContext(currentLine);
+                        Web subWeb = ctx.Web;
+                        Site siteCollection = ctx.Site;
+                        // Load web and web properties
+                        ctx.Load(subWeb, w => w.Webs, w => w.Url);
+                        // Execute Query against web
+                        ctx.ExecuteQuery();
+                        // find the SCAs or owners of the site collection
+                        ctx.Load(siteCollection, sc => sc.Id);
+                        ctx.ExecuteQuery();
+                        string currentWebUrl = subWeb.Url;
+                        Uri tempUri = new Uri(currentWebUrl);
+                        string urlDomain = tempUri.Host;
+                        // Build the Web Application Name
+                        string webApplication = urlDomain.Split('.')[0];
+                        string siteCollId = siteCollection.Id.ToString();
+                        
                         // 0 out the reference variables
                         string users = "";
                         string permissionLevels = "";
@@ -366,12 +359,13 @@ namespace MNIT.Inventory
                         // Run the SP Inventory AD Group function 
                         GetUsersAndGroups.InventoryAdGroups(currentLine, actingUser, ref users, ref permissionLevels, action, detailedUserReportPath);
                         // Write the Inventory information to the stream
-                        string[] passingUserObjects = new string[5];
+                        string[] passingUserObjects = new string[6];
                         passingUserObjects[0] = detailedUserReportPath;
-                        passingUserObjects[1] = siteCollId;
-                        passingUserObjects[2] = currentLine;
-                        passingUserObjects[3] = users;
-                        passingUserObjects[4] = permissionLevels;
+                        passingUserObjects[1] = webApplication;
+                        passingUserObjects[2] = siteCollId;
+                        passingUserObjects[3] = currentLine;
+                        passingUserObjects[4] = users;
+                        passingUserObjects[5] = permissionLevels;
                         WriteReports.WriteText(passingUserObjects);
                     }
                     catch (WebException webException)

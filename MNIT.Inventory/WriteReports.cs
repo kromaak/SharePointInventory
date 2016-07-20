@@ -4,7 +4,7 @@ using MNIT.Utilities;
 
 namespace MNIT.Inventory
 {
-    class WriteReports
+    public class WriteReports
     {
         public static void WriteText(string[] args)
         {

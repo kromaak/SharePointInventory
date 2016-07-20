@@ -100,7 +100,7 @@ namespace MNIT.Inventory
                     string strCheckedOutCount = "";
                     string strNeverCheckedInCount = "";
                     string manageListUrl = "";
-                    int largeListDiv = 3;
+                    //int largeListDiv = 3;
 
                     // Unlimited Versioning Check
                     if (tmpList.Hidden != true && tmpList.IsPrivate != true && tmpList.EnableVersioning == true &&

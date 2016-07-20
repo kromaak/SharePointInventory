@@ -123,7 +123,7 @@ namespace MNIT.Inventory
 
         public static void DivideLargeList(int itemCount, int divisor)
         {
-            int remainder = 0;
+            //int remainder = 0;
             if (itemCount % divisor >= 5000)
             {
                 divisor++;
