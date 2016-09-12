@@ -60,7 +60,7 @@ namespace MNIT.Inventory
                 string pageLayoutUrl = "";
                 string pageLayoutDesc = "";
                 string webPartTitle = "";
-                string webPartTitleUrl = "";
+                //string webPartTitleUrl = "";
                 //string pageAuthorName = "";
                 //string pageAuthorEmail = "";
                 //string pageEditorName = "";
@@ -200,56 +200,56 @@ namespace MNIT.Inventory
                                 exportedWpCounter++;
                                 listItemName = listItem.DisplayName;
                                 webPartTitle = webPart.Title;
-                                webPartTitleUrl = webPart.TitleUrl;
+                                //webPartTitleUrl = webPart.TitleUrl;
 
-                                if (!string.IsNullOrEmpty(webPartTitleUrl))
-                                {
-                                    string listFullUrl = "";
-                                    if (webPartTitleUrl.StartsWith("/"))
-                                    {
-                                        Uri wpTempUri = new Uri(subWeb.Url);
-                                        string wpUrlDomain = wpTempUri.Host;
-                                        string wpUrlProtocol = wpTempUri.Scheme;
-                                        listFullUrl = wpUrlProtocol + "://" + wpUrlDomain + webPartTitleUrl;
-                                    }
-                                    if (webPartTitleUrl.StartsWith("http"))
-                                    {
-                                        listFullUrl = webPartTitleUrl;
-                                    }
+                                //if (!string.IsNullOrEmpty(webPartTitleUrl))
+                                //{
+                                //    string listFullUrl = "";
+                                //    if (webPartTitleUrl.StartsWith("/"))
+                                //    {
+                                //        Uri wpTempUri = new Uri(subWeb.Url);
+                                //        string wpUrlDomain = wpTempUri.Host;
+                                //        string wpUrlProtocol = wpTempUri.Scheme;
+                                //        listFullUrl = wpUrlProtocol + "://" + wpUrlDomain + webPartTitleUrl;
+                                //    }
+                                //    if (webPartTitleUrl.StartsWith("http"))
+                                //    {
+                                //        listFullUrl = webPartTitleUrl;
+                                //    }
 
-                                    //List exportedWebPartList = subWeb.GetList(listFullUrl);
+                                //    //List exportedWebPartList = subWeb.GetList(listFullUrl);
 
-                                    ListCollection listCollectionExpWebPart = subWeb.Lists;
-                                    // This will not work if the link is pointing at a non-default view of a list
-                                    // Need to add function to check for, and trim off anything after a /forms/ piece of text in the link
-                                    //ctx.Load(listCollectionExpWebPart, lewp => lewp.Include(list => list.DefaultViewUrl).Where(list => list.DefaultViewUrl.Contains(webPartTitleUrl)));
-                                    //ctx.ExecuteQuery();
-                                    ctx.Load(listCollectionExpWebPart, all => all
-                                      .Where(l => l.RootFolder.Name == listFullUrl)
-                                      .Include(l => l.Id));
-                                    ctx.ExecuteQuery();
-                                    //List expList = listCollectionExpWebPart.Single();
+                                //    ListCollection listCollectionExpWebPart = subWeb.Lists;
+                                //    // This will not work if the link is pointing at a non-default view of a list
+                                //    // Need to add function to check for, and trim off anything after a /forms/ piece of text in the link
+                                //    //ctx.Load(listCollectionExpWebPart, lewp => lewp.Include(list => list.DefaultViewUrl).Where(list => list.DefaultViewUrl.Contains(webPartTitleUrl)));
+                                //    //ctx.ExecuteQuery();
+                                //    ctx.Load(listCollectionExpWebPart, all => all
+                                //      .Where(l => l.RootFolder.Name == listFullUrl)
+                                //      .Include(l => l.Id));
+                                //    ctx.ExecuteQuery();
+                                //    //List expList = listCollectionExpWebPart.Single();
 
-                                    if (listCollectionExpWebPart.Count > 0)
-                                    {
-                                        foreach (var expList in listCollectionExpWebPart)
-                                        {
-                                            ctx.Load(expList, el => el.Id);
-                                            ctx.ExecuteQuery();
-                                            Utilities.SpinAnimation.Stop();
-                                            Console.WriteLine("{0} List exists... {1}", webPartTitle, expList.Id);
-                                            Utilities.SpinAnimation.Start();
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Utilities.SpinAnimation.Stop();
-                                        Console.WriteLine("List {0} does not exist in current site on page {1}", listFullUrl, pageUrl);
-                                        Utilities.SpinAnimation.Start();
-                                    }
-                                    //Console.WriteLine(pageUrl + " WP title url: " + webPartTitleUrl);
-                                    //Console.WriteLine(subWeb.ServerRelativeUrl);
-                                }
+                                //    if (listCollectionExpWebPart.Count > 0)
+                                //    {
+                                //        foreach (var expList in listCollectionExpWebPart)
+                                //        {
+                                //            ctx.Load(expList, el => el.Id);
+                                //            ctx.ExecuteQuery();
+                                //            Utilities.SpinAnimation.Stop();
+                                //            Console.WriteLine("{0} List exists... {1}", webPartTitle, expList.Id);
+                                //            Utilities.SpinAnimation.Start();
+                                //        }
+                                //    }
+                                //    else
+                                //    {
+                                //        Utilities.SpinAnimation.Stop();
+                                //        Console.WriteLine("List {0} does not exist in current site on page {1}", listFullUrl, pageUrl);
+                                //        Utilities.SpinAnimation.Start();
+                                //    }
+                                //    //Console.WriteLine(pageUrl + " WP title url: " + webPartTitleUrl);
+                                //    //Console.WriteLine(subWeb.ServerRelativeUrl);
+                                //}
                                 //else
                                 //{
                                 //    Console.WriteLine("No, could not get URL to match{0}, or wp title url was empty: {1}", pageUrl, webPartTitleUrl);
@@ -283,13 +283,22 @@ namespace MNIT.Inventory
                         customPageCounter++;
                         listItemName = listItem.DisplayName;
                     }
+                }
 
+                // Attempt to see if the page is unghosted, and list it in the layout description column if the page is unghosted
+                if (!Utilities.SpObjects.ObjectIsFolder(listItem) && file.CustomizedPageStatus.Equals(CustomizedPageStatus.Customized))
+                {
+                    //string unghostedStatus = file.CustomizedPageStatus.ToString();
+                    string unghostedStatus = "file has been customized from site's definition or contains custom markup.";
+                    pageLayoutDesc += string.Format("; {0}", unghostedStatus);
+                    //customPageCounter++;
+                    listItemName = listItem.DisplayName;
                 }
 
                 // Write the line to the pages report
                 if (!string.IsNullOrEmpty(listItemName))
                 {
-                    string[] passingDetailedPagesObject = new string[9];
+                    string[] passingDetailedPagesObject = new string[8];
                     passingDetailedPagesObject[0] = customPagesPath;
                     passingDetailedPagesObject[1] = webApplication;
                     passingDetailedPagesObject[2] = siteCollId;
@@ -298,7 +307,7 @@ namespace MNIT.Inventory
                     passingDetailedPagesObject[5] = webPartTitle;
                     passingDetailedPagesObject[6] = pageLayoutDesc;
                     passingDetailedPagesObject[7] = pageLayoutUrl;
-                    passingDetailedPagesObject[8] = webPartTitleUrl;
+                    //passingDetailedPagesObject[8] = webPartTitleUrl;
                     //passingDetailedPagesObject[5] = pageModifier;
                     WriteReports.WriteText(passingDetailedPagesObject);
                 }
