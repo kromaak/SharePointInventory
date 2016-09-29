@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using Microsoft.SharePoint.Client;
 using Utils = MNIT.Utilities;
@@ -9,6 +8,88 @@ namespace MNIT.Inventory
 {
     public class ChooseReport
     {
+        // Run Running Workflow Instances Inventory
+        public static void RunDetailedWfInventory(string[] args, Utils.ActingUser actingUser)
+        {
+            // 0 = input file
+            string inputFile = args[0];
+            // 1 = detailed report file
+            string detailedWorkflowReportPath = args[1];
+            // 2 = rollup report file
+            string rollupWorkflowReportPath = args[2];
+            // Read through the list of sites
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
+            int everyTen = 0;
+            //foreach (string readCurrentLine in readUrls)
+            foreach (string readCurrentLine in list)
+            {
+                if (!string.IsNullOrEmpty(readCurrentLine.Trim()))
+                {
+                    string currentLine = readCurrentLine.Trim();
+                    everyTen++;
+                    // Counter Variables
+                    int runningInstanceCounter = 0;
+                    // Run the inventory function for Running Workflow Instances
+                    try
+                    {
+                        // Write the site URL every ten lines from CSV, to let the user know progress is being made
+                        if (everyTen % 10 == 0 && everyTen != 0)
+                        {
+                            Utils.SpinAnimation.Stop();
+                            Console.WriteLine();
+                            Console.WriteLine(@"Getting Running Workflow Instances info for the address provided: {0}",
+                                currentLine);
+                            Utils.SpinAnimation.Start();
+                        }
+                        GetDetailedWorkflows.InventoryWorkflowsDetailed(currentLine, actingUser, ref runningInstanceCounter, detailedWorkflowReportPath);
+                        
+                        string[] passingRollupIpObject = new string[4];
+                        passingRollupIpObject[0] = rollupWorkflowReportPath;
+                        passingRollupIpObject[1] = currentLine;
+                        passingRollupIpObject[2] = runningInstanceCounter.ToString();
+                        WriteReports.WriteText(passingRollupIpObject);
+                    }
+                    catch (WebException webException)
+                    {
+                        HttpWebResponse errorResponse = webException.Response as HttpWebResponse;
+                        // If the error code from the attempt is a 404 or similar, inform the user that the site doesn't exist or is unreachable
+                        if (!string.IsNullOrEmpty(errorResponse.ToString()) &&
+                            errorResponse.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            Console.WriteLine(@"Could not find the site at the address provided: {0}", currentLine);
+                        }
+                        // If the error code from the attempt is a 401 or similar, inform the user that they are not authorized
+                        if (!string.IsNullOrEmpty(errorResponse.ToString()) &&
+                            errorResponse.StatusCode == HttpStatusCode.Unauthorized)
+                        {
+                            Console.WriteLine(
+                                @"You do not have permissions with your current credentials for the site at this address: {0}",
+                                currentLine);
+                        }
+                    }
+                }
+            }
+        }
+
         // Runs Group Inventory
         public static void RunGroupInventory(string[] args, Utils.ActingUser actingUser)
         {
@@ -19,22 +100,26 @@ namespace MNIT.Inventory
             // 3 = detailed report file
             string detailedGroupReportPath = args[2];
             // Read through the list of sites
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex31Exception)
-            {
-                Console.WriteLine(ex31Exception.Message);
-            }
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
             int everyTen = 0;
             // For each site address in the CSV file
             foreach (string readCurrentLine in list)
@@ -47,6 +132,24 @@ namespace MNIT.Inventory
                     {
                         // Get Site information
                         ClientContext ctx = new ClientContext(currentLine);
+
+                        if (string.IsNullOrEmpty(actingUser.UserLoginName))
+                        {
+                            ctx.Credentials = CredentialCache.DefaultCredentials;
+                        }
+                        else
+                        {
+                            if (actingUser.UserLoginName.IndexOf("@") != -1)
+                            {
+                                ctx.Credentials = new SharePointOnlineCredentials(actingUser.UserLoginName,
+                                    actingUser.UserPassword);
+                            }
+                            else
+                            {
+                                ctx.Credentials = new NetworkCredential(actingUser.UserLoginName, actingUser.UserPassword,
+                                    actingUser.UserDomain);
+                            }
+                        }
                         Web subWeb = ctx.Web;
                         Site siteCollection = ctx.Site;
                         // Load web and web properties
@@ -117,22 +220,26 @@ namespace MNIT.Inventory
             // 2 = rollup report file
             string rollupInfoPathReportPath = args[2];
             // Read through the list of sites
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex31Exception)
-            {
-                Console.WriteLine(ex31Exception.Message);
-            }
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
             int everyTen = 0;
             //foreach (string readCurrentLine in readUrls)
             foreach (string readCurrentLine in list)
@@ -206,22 +313,26 @@ namespace MNIT.Inventory
             // 2 = rollup report file
             string rollupListReportPath = args[2];
             // Read through the list of sites
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex31Exception)
-            {
-                Console.WriteLine(ex31Exception.Message);
-            }
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
             int everyTen = 0;
             // For each site address in the CSV file
             foreach (string readCurrentLine in list)
@@ -299,22 +410,26 @@ namespace MNIT.Inventory
             // 2 = detailed report file
             string detailedUserReportPath = args[2];
             // Read through the list of sites
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex31Exception)
-            {
-                Console.WriteLine(ex31Exception.Message);
-            }
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
             int everyTen = 0;
             // For each site address in the CSV file
             //foreach (string readCurrentLine in readUrls)
@@ -407,24 +522,27 @@ namespace MNIT.Inventory
             string detailedWebsReportPath = args[1];
             // 2 = rollup report file
             string rollupWebsReportPath = args[2];
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex41Exception)
-            {
-                Console.WriteLine(ex41Exception.Message);
-            }
+            // Read through the list of sites
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
 
-            // For each site address in the CSV file
             int everyTen = 0;
             foreach (string readCurrentLine in list)
             {
@@ -538,22 +656,27 @@ namespace MNIT.Inventory
             string detailedWorkflowReportPath = args[1];
             // 2 = rollup report file
             string rollupWorkflowReportPath = args[2];
-            List<string> list = new List<string>();
-            try
-            {
-                using (StreamReader reader = new StreamReader(inputFile))
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        list.Add(line);
-                    }
-                }
-            }
-            catch (Exception ex31Exception)
-            {
-                Console.WriteLine(ex31Exception.Message);
-            }
+            // Read through the list of sites
+            //List<string> list = new List<string>();
+            //try
+            //{
+            //    using (StreamReader reader = new StreamReader(inputFile))
+            //    {
+            //        string line;
+            //        while ((line = reader.ReadLine()) != null)
+            //        {
+            //            list.Add(line);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex31Exception)
+            //{
+            //    Console.WriteLine(ex31Exception.Message);
+            //}
+            string[] argsStrings = new string[1];
+            argsStrings[0] = inputFile;
+            List<string> list = Utils.ReadFile.ReadInput(argsStrings);
+
             int everyTen = 0;
             foreach (string readCurrentLine in list)
             {

@@ -52,11 +52,40 @@ namespace MNIT.Inventory
             
         }
 
+        public static void WriteDetailedWfReportHeaders(string outputFilePath)
+        {
+            // Write the standard info CSV Header
+            string detailedWfReportPath = outputFilePath;
+            // Write the Headers for the Detailed Workflow Instances report
+            string[] passingDetailedWfHeaderObject = new string[11];
+            passingDetailedWfHeaderObject[0] = detailedWfReportPath;
+            passingDetailedWfHeaderObject[1] = "Site ID";
+            passingDetailedWfHeaderObject[2] = "Web ID";
+            passingDetailedWfHeaderObject[3] = "Site Name";
+            passingDetailedWfHeaderObject[4] = "Site URL";
+            passingDetailedWfHeaderObject[5] = "Site Owner";
+            passingDetailedWfHeaderObject[6] = "List Name";
+            passingDetailedWfHeaderObject[7] = "List URL";
+            passingDetailedWfHeaderObject[8] = "Workflow Type";
+            passingDetailedWfHeaderObject[9] = "Workflow Name";
+            passingDetailedWfHeaderObject[10] = "Running Instances";
+            WriteReports.WriteText(passingDetailedWfHeaderObject);
+
+            // Write the CSV header for the rolled up Inventory function
+            string rollupDetailedWfReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupDetailedWorkflow");
+            // Write the Headers for the Rollup Workflow Instances report
+            string[] passingDetailedWfRollupHeaderObject = new string[3];
+            passingDetailedWfRollupHeaderObject[0] = rollupDetailedWfReportPath;
+            passingDetailedWfRollupHeaderObject[1] = "SiteURL";
+            passingDetailedWfRollupHeaderObject[2] = "RunningInstances";
+            WriteReports.WriteText(passingDetailedWfRollupHeaderObject);
+        }
+
         public static void WriteGroupReportHeaders(string outputFilePath)
         {
             // Write the header data to CSV file
             string detailedGroupReportPath = outputFilePath.Replace("DetailedWorkflow", "ADGroups");
-            // Create a header for the user report
+            // Create a header for the AD Group report
             string[] passingGroupHeaderObject = new string[6];
             passingGroupHeaderObject[0] = detailedGroupReportPath;
             passingGroupHeaderObject[1] = "Web Application";
@@ -71,7 +100,7 @@ namespace MNIT.Inventory
         {
             // Write the standard info CSV Header
             string detailedInfoPathReportPath = outputFilePath.Replace("DetailedWorkflow", "InfoPath");
-            // Create a header for the user report
+            // Create a header for the InfoPath report
             string[] passingInfoPathHeaderObject = new string[11];
             passingInfoPathHeaderObject[0] = detailedInfoPathReportPath;
             passingInfoPathHeaderObject[1] = "Web Application";
@@ -87,7 +116,7 @@ namespace MNIT.Inventory
             WriteReports.WriteText(passingInfoPathHeaderObject);
             // Write the rollup info CSV Header
             string rollupInfoPathReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupInfoPath");
-            // Create a header for the user report
+            // Create a header for the Rollup InfoPath report
             string[] passingIpRollupHeaderObject = new string[4];
             passingIpRollupHeaderObject[0] = rollupInfoPathReportPath;
             passingIpRollupHeaderObject[1] = "Site URL";
@@ -100,7 +129,7 @@ namespace MNIT.Inventory
         {
             // Write the CSV Header
             string detailedListReportPath = outputFilePath.Replace("DetailedWorkflow", "ListItemVersions");
-            // Create a header for the user report
+            // Create a header for the list report
             string[] passingLvHeaderObject = new string[17];
             passingLvHeaderObject[0] = detailedListReportPath;
             passingLvHeaderObject[1] = "Web Application";
@@ -122,7 +151,7 @@ namespace MNIT.Inventory
             WriteReports.WriteText(passingLvHeaderObject);
             // Write the rollup CSV Header
             string rollupListReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupVersions");
-            // Create a header for the user report
+            // Create a header for the Rollup List report
             string[] passingLvRollupHeaderObject = new string[5];
             passingLvRollupHeaderObject[0] = rollupListReportPath;
             passingLvRollupHeaderObject[1] = "Site URL";
@@ -136,7 +165,7 @@ namespace MNIT.Inventory
         {
             // Write the standard report CSV Header
             string detailedWorkflowReportPath = outputFilePath.Replace("DetailedWorkflow", "StandardWorkflow");
-            // Create a header for the user report
+            // Create a header for the Standard Workfloow report
             string[] passingStandardHeaderObject = new string[12];
             passingStandardHeaderObject[0] = detailedWorkflowReportPath;
             passingStandardHeaderObject[1] = "Web Application";
@@ -153,7 +182,7 @@ namespace MNIT.Inventory
             WriteReports.WriteText(passingStandardHeaderObject);
             // Write the rollup CSV Header
             string rollupWorkflowReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupStandardWorkflow");
-            // Create a header for the user report
+            // Create a header for the Rollup Workflow report
             string[] passingStandardRollupHeaderObject = new string[5];
             passingStandardRollupHeaderObject[0] = rollupWorkflowReportPath;
             passingStandardRollupHeaderObject[1] = "Site URL";
@@ -182,8 +211,8 @@ namespace MNIT.Inventory
         {
             // Write header data to CSV file
             string detailedWebsReportPath = outputFilePath.Replace("DetailedWorkflow", "Webs");
-            // Create a header for the user report
-            string[] passingWebHeaderObject = new string[19];
+            // Create a header for the Webs report
+            string[] passingWebHeaderObject = new string[21];
             passingWebHeaderObject[0] = detailedWebsReportPath;
             passingWebHeaderObject[1] = "Web Application";
             passingWebHeaderObject[2] = "Site ID";
@@ -203,10 +232,12 @@ namespace MNIT.Inventory
             passingWebHeaderObject[16] = "List Template Library";
             passingWebHeaderObject[17] = "Storage (MB)";
             passingWebHeaderObject[18] = "Sub Sites";
+            passingWebHeaderObject[19] = "Site Logo URL";
+            passingWebHeaderObject[20] = "Alternate CSS URL";
             WriteReports.WriteText(passingWebHeaderObject);
             // Write the rollup CSV Header
             string rollupWebsReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupWebs");
-            // Create a header for the user report
+            // Create a header for the Rollup Webs report
             string[] passingWebRollupHeaderObject = new string[10];
             passingWebRollupHeaderObject[0] = rollupWebsReportPath;
             passingWebRollupHeaderObject[1] = "Site URL";
@@ -222,7 +253,7 @@ namespace MNIT.Inventory
             WriteReports.WriteText(passingWebRollupHeaderObject);
             // Create a new file path for adding custom page layouts to a new custom report to act against
             string customPagesPath = outputFilePath.Replace("DetailedWorkflow", "Pages");
-            // Run the rolled up Inventory function
+            // Create a header for the Custom Pages and Page Layouts report
             string[] passingDetailedPagesHeaderObject = new string[7];
             passingDetailedPagesHeaderObject[0] = customPagesPath;
             passingDetailedPagesHeaderObject[1] = "Web Application";

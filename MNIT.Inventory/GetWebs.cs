@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.SharePoint.Client;
+using Microsoft.SharePoint.Client.Publishing;
 using Microsoft.SharePoint.Client.WebParts;
 
 using Utils = MNIT.Utilities;
@@ -31,6 +33,8 @@ namespace MNIT.Inventory
             string pageLayouts = "";
             string strSiteSize = "";
             string strWebCount = "";
+            string strSiteLogo = "";
+            string strAlternateCss = "";
             //string requestAccess = "";
             ClientContext ctx = new ClientContext(siteAddress);
             if (string.IsNullOrEmpty(actingUser.UserLoginName))
@@ -52,7 +56,7 @@ namespace MNIT.Inventory
             }
             Web subWeb = ctx.Web;
             // Load web and web properties
-            ctx.Load(subWeb, w => w.Webs, w => w.Url, w => w.Title, w => w.Lists, w => w.WebTemplate, w => w.Id, w => w.MasterUrl, w => w.CustomMasterUrl, w => w.ServerRelativeUrl);
+            ctx.Load(subWeb, w => w.Webs, w => w.Url, w => w.Title, w => w.Lists, w => w.WebTemplate, w => w.Id, w => w.MasterUrl, w => w.CustomMasterUrl, w => w.ServerRelativeUrl, w => w.SiteLogoUrl, w => w.AlternateCssUrl, w => w.AllProperties);
             // Execute Query against web
             ctx.ExecuteQuery();
 
@@ -60,6 +64,44 @@ namespace MNIT.Inventory
             {
                 // Get the site template used by each web in the site collection
                 urlTemplate = subWeb.WebTemplate;
+                // Non Add-In web properties
+                if (subWeb.Url.ElementAt(8) != 'a')
+                {
+                    // Site Logo for each web in site collection
+                    strSiteLogo = subWeb.SiteLogoUrl ?? "Inherited Site Logo";
+                    // Alternate CSS
+                    //var publishingWeb = PublishingWeb.GetPublishingWeb(ctx, subWeb);
+                    //if (publishingWeb.AlternateCssUrl.IsInheriting)
+                    PropertyValues pv = subWeb.AllProperties;
+                    foreach (var de in pv.FieldValues.Where(de => !de.Key.Contains("__InheritsAlternateCssUrl")))
+                    {
+                        //strAlternateCss = string.Format("Publishing not enabled; Key: {0}; Value: {1}", de.Key, de.Value) ;
+                        //strAlternateCss = "Unable to read CSS property";
+                        strAlternateCss = "Default CSS associated with Master Page";
+                    }
+
+                    foreach (var de in pv.FieldValues.Where(de => de.Key.Contains("__InheritsAlternateCssUrl")))
+                    {
+                        if (!string.IsNullOrEmpty(subWeb.AlternateCssUrl))
+                        {
+                            if (de.Value.ToString().ToLower() == "false")
+                            {
+                                strAlternateCss = subWeb.AlternateCssUrl;
+                            }
+                            else
+                            {
+                                strAlternateCss = "CSS Inherited from parent";
+                            }
+                        }
+                        else
+                        {
+                            //strAlternateCss = "Default CSS associated with Master Page";
+                            strAlternateCss = "Default CSS associated with Master Page";
+                            
+                        }
+                    }
+                    //Console.WriteLine(subWeb.Url + ": " + strAlternateCss);
+                }
                 // Find the SCAs or owners of the site collection
                 Site siteCollection = ctx.Site;
                 ctx.Load(siteCollection, sc => sc.Owner, sc => sc.Url, sc => sc.RootWeb, sc => sc.RequiredDesignerVersion, sc => sc.CompatibilityLevel, sc => sc.Id, sc => sc.Usage);
@@ -207,7 +249,7 @@ namespace MNIT.Inventory
                     rootFolder = "Drop Off Library";
                 }
                 // Write a line for each web
-                string[] passingWebObject = new string[19];
+                string[] passingWebObject = new string[21];
                 passingWebObject[0] = csvFilePath;
                 passingWebObject[1] = webApplication;
                 passingWebObject[2] = siteCollId;
@@ -227,7 +269,9 @@ namespace MNIT.Inventory
                 passingWebObject[16] = listGalleryUrl;
                 passingWebObject[17] = strSiteSize;
                 passingWebObject[18] = strWebCount;
-                //passingWebObject[16] = accessRequest;
+                passingWebObject[19] = strSiteLogo;
+                passingWebObject[20] = strAlternateCss;
+                //passingWebObject[21] = accessRequest;
                 WriteReports.WriteText(passingWebObject);
 
                 // For every web, look for sub webs and Only use webs that are not a host for apps

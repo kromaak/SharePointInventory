@@ -15,10 +15,9 @@ namespace MNIT.Inventory
 
     public class GetUsersAndGroups
     {
-    // Method to inventory information about sites with workflows and instances of workflows
+        // Method to inventory information about sites with workflows and instances of workflows
         public static void InventoryAdGroups(string siteAddress, Utils.ActingUser actingUser, ref string adGroups, ref string permissionLevels, string action, string csvFilePath)
         {
-            // Variables 
             // ClientContext declaration
             ClientContext ctx = new ClientContext(siteAddress);
             if (string.IsNullOrEmpty(actingUser.UserLoginName))
@@ -38,7 +37,6 @@ namespace MNIT.Inventory
                         actingUser.UserDomain);
                 }
             }
-            //ctx.Credentials = !string.IsNullOrEmpty(actingUser.UserLoginName) ? new NetworkCredential(actingUser.UserLoginName, actingUser.UserPassword, actingUser.UserDomain) : CredentialCache.DefaultCredentials;
             Web subWeb = ctx.Web;
             Site siteCollection = ctx.Site;
             // Load web and web properties
@@ -90,7 +88,7 @@ namespace MNIT.Inventory
 
                 foreach (User adGrp in adUserGroupColl)
                 {
-                    ctx.Load(adGrp, adg => adg.PrincipalType);
+                    ctx.Load(adGrp, adg => adg.PrincipalType, adg => adg.Id, adg => adg.UserId);
                     ctx.ExecuteQuery();
 
                     if (action.ToLower() == "groups")
@@ -115,6 +113,7 @@ namespace MNIT.Inventory
                             userEmail = !string.IsNullOrEmpty(adGrp.Email) ? "[" + adGrp.Email + "]" : "";
                             userTitle = "[" + adGrp.Title + "]";
                             userLoginName = "[" + adGrp.LoginName + "]";
+                            //userLoginName = "[" + adGrp.LoginName + "][" + adGrp.UserId + "][" + adGrp.Id + "]";
                             adGroups += userTitle + userLoginName + userEmail + "; ";
                         }
                     }
@@ -194,6 +193,7 @@ namespace MNIT.Inventory
                                 userEmail = !string.IsNullOrEmpty(siteUser.Email) ? "[" + siteUser.Email + "]" : "";
                                 userTitle = "[" + siteUser.Title + "]";
                                 userLoginName = "[" + siteUser.LoginName + "]";
+                                //userLoginName = "[" + siteUser.LoginName + "][" + siteUser.UserId + "][" + siteUser.Id + "]";
                                 adGroups += userTitle + userLoginName + userEmail + "; ";
                             }
                         }
