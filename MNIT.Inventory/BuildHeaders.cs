@@ -212,7 +212,7 @@ namespace MNIT.Inventory
             // Write header data to CSV file
             string detailedWebsReportPath = outputFilePath.Replace("DetailedWorkflow", "Webs");
             // Create a header for the Webs report
-            string[] passingWebHeaderObject = new string[21];
+            string[] passingWebHeaderObject = new string[19];
             passingWebHeaderObject[0] = detailedWebsReportPath;
             passingWebHeaderObject[1] = "Web Application";
             passingWebHeaderObject[2] = "Site ID";
@@ -230,15 +230,15 @@ namespace MNIT.Inventory
             passingWebHeaderObject[14] = "Drop Off Library";
             passingWebHeaderObject[15] = "Custom Page Layouts";
             passingWebHeaderObject[16] = "List Template Library";
-            passingWebHeaderObject[17] = "Storage (MB)";
+            passingWebHeaderObject[17] = "Storage Size";
             passingWebHeaderObject[18] = "Sub Sites";
-            passingWebHeaderObject[19] = "Site Logo URL";
-            passingWebHeaderObject[20] = "Alternate CSS URL";
+            //passingWebHeaderObject[19] = "Site Logo URL";
+            //passingWebHeaderObject[20] = "Alternate CSS URL";
             WriteReports.WriteText(passingWebHeaderObject);
             // Write the rollup CSV Header
             string rollupWebsReportPath = outputFilePath.Replace("DetailedWorkflow", "RollupWebs");
             // Create a header for the Rollup Webs report
-            string[] passingWebRollupHeaderObject = new string[10];
+            string[] passingWebRollupHeaderObject = new string[11];
             passingWebRollupHeaderObject[0] = rollupWebsReportPath;
             passingWebRollupHeaderObject[1] = "Site URL";
             passingWebRollupHeaderObject[2] = "Workspace Templates";
@@ -249,7 +249,8 @@ namespace MNIT.Inventory
             passingWebRollupHeaderObject[7] = "Deployed Apps";
             passingWebRollupHeaderObject[8] = "DropOff Libraries";
             passingWebRollupHeaderObject[9] = "List Templates";
-            //passingWebRollupHeaderObject[10] = "Exported Web Parts";
+            passingWebRollupHeaderObject[10] = "Sub Sites";
+            //passingWebRollupHeaderObject[11] = "Exported Web Parts";
             WriteReports.WriteText(passingWebRollupHeaderObject);
             // Create a new file path for adding custom page layouts to a new custom report to act against
             string customPagesPath = outputFilePath.Replace("DetailedWorkflow", "Pages");

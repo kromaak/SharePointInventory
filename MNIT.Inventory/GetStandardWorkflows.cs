@@ -63,7 +63,7 @@ namespace MNIT.Inventory
                 // Workflow Services Manager which will handle all the workflow interaction.
                 WorkflowServicesManager wfManager = new WorkflowServicesManager(ctx, ctx.Web);
 
-                foreach (List tmpList in ctx.Web.Lists)
+                foreach (List tmpList in subWeb.Lists)
                 {
                     // Load list and list properties
                     ctx.Load(tmpList, t => t.Title, t => t.DefaultViewUrl, t => t.Id, t => t.WorkflowAssociations, t => t.TemplateFeatureId);

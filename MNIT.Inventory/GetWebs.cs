@@ -14,7 +14,7 @@ namespace MNIT.Inventory
     public class GetWebs
     {
         // Method to inventory webs, web owners, templates, and sandbox solutions
-        public static void InventoryWebs(string siteAddress, string exportedWp, Utilities.ActingUser actingUser, ref int siteTemplateCounter, ref int solutionCounter, ref int masterPageCounter, ref int pageLayoutCounter, ref int customPageCounter, ref int appCounter, ref int dropoffCounter, ref int listTemplateCounter, ref int exportedWpCounter, string csvFilePath)
+        public static void InventoryWebs(string siteAddress, string exportedWp, Utilities.ActingUser actingUser, ref int siteTemplateCounter, ref int solutionCounter, ref int masterPageCounter, ref int pageLayoutCounter, ref int customPageCounter, ref int appCounter, ref int dropoffCounter, ref int listTemplateCounter, ref int exportedWpCounter, ref int subWebCounter, string csvFilePath)
         {
             // Variables
             string strSolutionCount = "";
@@ -36,6 +36,7 @@ namespace MNIT.Inventory
             string strSiteLogo = "";
             string strAlternateCss = "";
             //string requestAccess = "";
+            //string strSiteHits = "";
             ClientContext ctx = new ClientContext(siteAddress);
             if (string.IsNullOrEmpty(actingUser.UserLoginName))
             {
@@ -62,6 +63,13 @@ namespace MNIT.Inventory
 
             try
             {
+
+                // Get the sub web count for this sub site
+                int subWebCount = subWeb.Webs.Count;
+                strWebCount = subWebCount.ToString();
+                // Continue the counter for the rollup report, so it has the total number of sites in the collection
+                subWebCounter += subWebCount;
+                
                 // Get the site template used by each web in the site collection
                 urlTemplate = subWeb.WebTemplate;
                 // Non Add-In web properties
@@ -70,13 +78,9 @@ namespace MNIT.Inventory
                     // Site Logo for each web in site collection
                     strSiteLogo = subWeb.SiteLogoUrl ?? "Inherited Site Logo";
                     // Alternate CSS
-                    //var publishingWeb = PublishingWeb.GetPublishingWeb(ctx, subWeb);
-                    //if (publishingWeb.AlternateCssUrl.IsInheriting)
                     PropertyValues pv = subWeb.AllProperties;
                     foreach (var de in pv.FieldValues.Where(de => !de.Key.Contains("__InheritsAlternateCssUrl")))
                     {
-                        //strAlternateCss = string.Format("Publishing not enabled; Key: {0}; Value: {1}", de.Key, de.Value) ;
-                        //strAlternateCss = "Unable to read CSS property";
                         strAlternateCss = "Default CSS associated with Master Page";
                     }
 
@@ -97,10 +101,8 @@ namespace MNIT.Inventory
                         {
                             //strAlternateCss = "Default CSS associated with Master Page";
                             strAlternateCss = "Default CSS associated with Master Page";
-                            
                         }
                     }
-                    //Console.WriteLine(subWeb.Url + ": " + strAlternateCss);
                 }
                 // Find the SCAs or owners of the site collection
                 Site siteCollection = ctx.Site;
@@ -226,10 +228,10 @@ namespace MNIT.Inventory
                         //strListOfListTemplates = Enumerable.Aggregate(items, strListOfListTemplates, (current, listItem) => current + ("; " + listItem.DisplayName));
                         listGalleryUrl += strListOfListTemplates;
                     }
-                    // Get the basic info about the root web like sub web count
-                    int subWebCount = subWeb.Webs.Count;
-                    strWebCount = subWebCount.ToString();
-                    //strSiteSize = siteSize.ToString();
+                    //// Get the basic info about the root web like sub web count
+                    //int subWebCount = subWeb.Webs.Count;
+                    //strWebCount = subWebCount.ToString();
+                    // Add site collection size with the appropriate label GB/MB/etc.
                     strSiteSize = SizeSuffix(conversionSize);
                 }
                 // Find all the webs that have a root folder called DropOffLibrary
@@ -249,7 +251,7 @@ namespace MNIT.Inventory
                     rootFolder = "Drop Off Library";
                 }
                 // Write a line for each web
-                string[] passingWebObject = new string[21];
+                string[] passingWebObject = new string[19];
                 passingWebObject[0] = csvFilePath;
                 passingWebObject[1] = webApplication;
                 passingWebObject[2] = siteCollId;
@@ -269,8 +271,8 @@ namespace MNIT.Inventory
                 passingWebObject[16] = listGalleryUrl;
                 passingWebObject[17] = strSiteSize;
                 passingWebObject[18] = strWebCount;
-                passingWebObject[19] = strSiteLogo;
-                passingWebObject[20] = strAlternateCss;
+                //passingWebObject[19] = strSiteLogo;
+                //passingWebObject[20] = strAlternateCss;
                 //passingWebObject[21] = accessRequest;
                 WriteReports.WriteText(passingWebObject);
 
@@ -279,12 +281,15 @@ namespace MNIT.Inventory
                 {
                     if (recursiveSubWeb.Url.ElementAt(8) != 'a')
                     {
-                        InventoryWebs(recursiveSubWeb.Url, exportedWp, actingUser, ref siteTemplateCounter, ref solutionCounter, ref masterPageCounter, ref pageLayoutCounter, ref customPageCounter, ref appCounter, ref dropoffCounter, ref listTemplateCounter, ref exportedWpCounter, csvFilePath);
+                        InventoryWebs(recursiveSubWeb.Url, exportedWp, actingUser, ref siteTemplateCounter, ref solutionCounter, ref masterPageCounter, ref pageLayoutCounter, ref customPageCounter, ref appCounter, ref dropoffCounter, ref listTemplateCounter, ref exportedWpCounter, ref subWebCounter, csvFilePath);
                     }
                     // Try to inventory the app webs that would otherwise be missed in the inventory
                     else
                     {
+                        // add to the running tally of Add-Ins
                         appCounter++;
+                        // add to the running count of sub webs
+                        subWebCounter++;
                         // Write App Web Object To CSV
                         string[] passingAppWebObject = new string[12];
                         passingAppWebObject[0] = csvFilePath;

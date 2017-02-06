@@ -312,23 +312,7 @@ namespace MNIT.Inventory
             string detailedListReportPath = args[1];
             // 2 = rollup report file
             string rollupListReportPath = args[2];
-            // Read through the list of sites
-            //List<string> list = new List<string>();
-            //try
-            //{
-            //    using (StreamReader reader = new StreamReader(inputFile))
-            //    {
-            //        string line;
-            //        while ((line = reader.ReadLine()) != null)
-            //        {
-            //            list.Add(line);
-            //        }
-            //    }
-            //}
-            //catch (Exception ex31Exception)
-            //{
-            //    Console.WriteLine(ex31Exception.Message);
-            //}
+            // Use Utils functions to Read through the list of sites
             string[] argsStrings = new string[1];
             argsStrings[0] = inputFile;
             List<string> list = Utils.ReadFile.ReadInput(argsStrings);
@@ -359,7 +343,7 @@ namespace MNIT.Inventory
                             }
                             GetVersions.InventoryVersions(currentLine, actingUser, ref largeListCounter,ref unlimitedVerCounter, ref siteCollCheckedOut, detailedListReportPath);
 
-                            //// Run the SP Inventory List Update function
+                            //// Run the SP Inventory List Update function to store metrics in a SharePoint list
                             //if (args.Length > 0 && args[0] == "i")
                             //{
                             //    if (args[1].Length > 0 && args[1].Contains("http"))
@@ -409,23 +393,7 @@ namespace MNIT.Inventory
             string action = args[1];
             // 2 = detailed report file
             string detailedUserReportPath = args[2];
-            // Read through the list of sites
-            //List<string> list = new List<string>();
-            //try
-            //{
-            //    using (StreamReader reader = new StreamReader(inputFile))
-            //    {
-            //        string line;
-            //        while ((line = reader.ReadLine()) != null)
-            //        {
-            //            list.Add(line);
-            //        }
-            //    }
-            //}
-            //catch (Exception ex31Exception)
-            //{
-            //    Console.WriteLine(ex31Exception.Message);
-            //}
+            // Use Utils functions to Read through the list of sites
             string[] argsStrings = new string[1];
             argsStrings[0] = inputFile;
             List<string> list = Utils.ReadFile.ReadInput(argsStrings);
@@ -522,23 +490,7 @@ namespace MNIT.Inventory
             string detailedWebsReportPath = args[1];
             // 2 = rollup report file
             string rollupWebsReportPath = args[2];
-            // Read through the list of sites
-            //List<string> list = new List<string>();
-            //try
-            //{
-            //    using (StreamReader reader = new StreamReader(inputFile))
-            //    {
-            //        string line;
-            //        while ((line = reader.ReadLine()) != null)
-            //        {
-            //            list.Add(line);
-            //        }
-            //    }
-            //}
-            //catch (Exception ex31Exception)
-            //{
-            //    Console.WriteLine(ex31Exception.Message);
-            //}
+            // Use Utils functions to Read through the list of sites
             string[] argsStrings = new string[1];
             argsStrings[0] = inputFile;
             List<string> list = Utils.ReadFile.ReadInput(argsStrings);
@@ -559,6 +511,7 @@ namespace MNIT.Inventory
                     int dropoffCounter = 0;
                     int listTemplateCounter = 0;
                     int exportedWpCounter = 0;
+                    int subWebCounter = 0;
                     // Run the inventory function for WEB Information
                     try
                     {
@@ -600,11 +553,11 @@ namespace MNIT.Inventory
                         //else
                         //{
                             GetWebs.InventoryWebs(currentLine, null, actingUser, ref siteTemplateCounter,
-                                ref solutionCounter,
-                                ref masterPageCounter, ref pageLayoutCounter, ref customPageCounter, ref appCounter, ref dropoffCounter, ref listTemplateCounter, ref exportedWpCounter, detailedWebsReportPath);
+                                ref solutionCounter, ref masterPageCounter, ref pageLayoutCounter, ref customPageCounter,
+                                ref appCounter, ref dropoffCounter, ref listTemplateCounter, ref exportedWpCounter, ref subWebCounter, detailedWebsReportPath);
                         //}
                         // Write the counters to the site collection rollup report
-                        string[] passingWebRollupObject = new string[11];
+                        string[] passingWebRollupObject = new string[12];
                         passingWebRollupObject[0] = rollupWebsReportPath;
                         passingWebRollupObject[1] = currentLine;
                         passingWebRollupObject[2] = siteTemplateCounter.ToString();
@@ -615,8 +568,9 @@ namespace MNIT.Inventory
                         passingWebRollupObject[7] = appCounter.ToString();
                         passingWebRollupObject[8] = dropoffCounter.ToString();
                         passingWebRollupObject[9] = listTemplateCounter.ToString();
-                        passingWebRollupObject[10] = exportedWpCounter > 0 ? exportedWpCounter.ToString() : "";
-                        //passingWebRollupObject[10] = "";
+                        passingWebRollupObject[10] = subWebCounter.ToString();
+                        passingWebRollupObject[11] = exportedWpCounter > 0 ? exportedWpCounter.ToString() : "";
+                        //passingWebRollupObject[12] = "";
                         WriteReports.WriteText(passingWebRollupObject);
                     }
                     catch (WebException webException)
@@ -656,23 +610,7 @@ namespace MNIT.Inventory
             string detailedWorkflowReportPath = args[1];
             // 2 = rollup report file
             string rollupWorkflowReportPath = args[2];
-            // Read through the list of sites
-            //List<string> list = new List<string>();
-            //try
-            //{
-            //    using (StreamReader reader = new StreamReader(inputFile))
-            //    {
-            //        string line;
-            //        while ((line = reader.ReadLine()) != null)
-            //        {
-            //            list.Add(line);
-            //        }
-            //    }
-            //}
-            //catch (Exception ex31Exception)
-            //{
-            //    Console.WriteLine(ex31Exception.Message);
-            //}
+            // Use Utils functions to Read through the list of sites
             string[] argsStrings = new string[1];
             argsStrings[0] = inputFile;
             List<string> list = Utils.ReadFile.ReadInput(argsStrings);
