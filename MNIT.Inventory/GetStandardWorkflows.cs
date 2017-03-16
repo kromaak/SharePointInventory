@@ -32,7 +32,7 @@ namespace MNIT.Inventory
             Web subWeb = ctx.Web;
             Site siteCollection = ctx.Site;
             // Load web and web properties
-            ctx.Load(ctx.Web, w => w.Webs, w => w.Url, w => w.Title, w => w.Lists, w => w.Id);
+            ctx.Load(ctx.Web, w => w.Webs, w => w.Url, w => w.Title, w => w.Lists, w => w.Id, w => w.ContentTypes);
             // Execute Query against web
             ctx.ExecuteQuery();
             try
@@ -42,7 +42,7 @@ namespace MNIT.Inventory
                 Uri tempUri = new Uri(currentWebUrl);
                 string urlDomain = tempUri.Host;
                 string urlProtocol = tempUri.Scheme;
-                string wfPlatform = "SPD2013";
+                string wfPlatform = "";
                 string siteCollId = "";
                 string webId = "";
                 // find the SCAs or owners of the site collection
@@ -59,10 +59,13 @@ namespace MNIT.Inventory
                     webId = subWeb.Id.ToString();
                     siteCollId = siteCollection.Id.ToString();
                 }
+                // Build the Web Application Name
+                string webApplication = urlDomain.Split('.')[0];
+                
                 // Build out the calls to get information about WorkFlows
                 // Workflow Services Manager which will handle all the workflow interaction.
-                WorkflowServicesManager wfManager = new WorkflowServicesManager(ctx, ctx.Web);
-
+                WorkflowServicesManager wfManager = new WorkflowServicesManager(ctx, subWeb);
+                // Listing out workflows associated with Lists and Libraries
                 foreach (List tmpList in subWeb.Lists)
                 {
                     // Load list and list properties
@@ -73,8 +76,6 @@ namespace MNIT.Inventory
                     // Build the URL
                     string currentListUrl = urlProtocol + "://" + urlDomain + tmpList.DefaultViewUrl;
                     string associationUrl = "";
-                    // Build the Web Application Name
-                    string webApplication = urlDomain.Split('.')[0];
                     // Connect to WF subscription service
                     WorkflowSubscriptionService wfSubscriptionService = wfManager.GetWorkflowSubscriptionService();
                     // Create WF Subscription Collection
@@ -167,6 +168,146 @@ namespace MNIT.Inventory
                             passingWfObject[11] = associationId;
                             WriteReports.WriteText(passingWfObject);
                         }
+                    }
+                }
+                
+                // Listing out workflows associated with Content Types
+                foreach (ContentType tmpCtype in subWeb.ContentTypes)
+                {
+                    // Load Content Types and Content Type properties
+                    ctx.Load(tmpCtype, ct => ct.Name, ct => ct.WorkflowAssociations, ct => ct.Id);
+                    // Execute Query against the list
+                    ctx.ExecuteQuery();
+                    string currentCtypeName = tmpCtype.Name;
+                    // Build the URL
+                    //string currentCtypeUrl = urlProtocol + "://" + urlDomain + tmpCtype.DefaultViewUrl;
+                    string associationUrl = "";
+                    //// Build the Web Application Name
+                    //string webApplication = urlDomain.Split('.')[0];
+                    // Connect to WF subscription service
+                    WorkflowSubscriptionService wfSubscriptionService = wfManager.GetWorkflowSubscriptionService();
+                    // Create WF Subscription Collection
+                    WorkflowSubscriptionCollection wfSubscriptions = wfSubscriptionService.EnumerateSubscriptions();
+                        //wfSubscriptionService.EnumerateSubscriptionsByList(tmpCtype.Id);
+                    // Load the WF subscriptions collection
+                    ctx.Load(wfSubscriptions);
+                    // Execute the query
+                    ctx.ExecuteQuery();
+                    // Collect WF information about 2013 WFs
+                    foreach (var wfSubscription in wfSubscriptions)
+                    {
+                        ctx.Load(wfSubscription, wfSub => wfSub.Name, wfSub => wfSub.Id);
+                        ctx.ExecuteQuery();
+                        string wfSubscriptionName = wfSubscription.Name;
+                        string wfSubscriptionId = wfSubscription.Id.ToString();
+                        wfPlatform = "SPD2013";
+                        if (!wfSubscriptionName.Contains("Previous Version"))
+                        {
+                            spd2013Counter++;
+                        }
+                        //// Write the 2013 WF information about the site, the Content Type, the workflow association, and the workflow instance to the inventory CSV file
+                        string[] passingWfObject = new string[12];
+                        passingWfObject[0] = csvFilePath;
+                        passingWfObject[1] = webApplication;
+                        passingWfObject[2] = siteCollId;
+                        passingWfObject[3] = webId;
+                        passingWfObject[4] = currentWebTitle;
+                        passingWfObject[5] = currentWebUrl;
+                        passingWfObject[6] = rootWebOwner;
+                        passingWfObject[7] = currentCtypeName;
+                        passingWfObject[8] = "Content Type Workflow";
+                        passingWfObject[9] = wfPlatform;
+                        passingWfObject[10] = wfSubscriptionName;
+                        passingWfObject[11] = wfSubscriptionId;
+                        WriteReports.WriteText(passingWfObject);
+                    }
+
+                    // Collect WF information about 2010 WFs
+                    foreach (var association in tmpCtype.WorkflowAssociations)
+                    {
+                        // Initialize Variables
+                        string wfAssocName = "";
+                        //string wfAssocType = "";
+                        // Load WF associations and WF association properties
+                        ctx.Load(association, a => a.Name, a => a.Id);
+                        // Execute Query against workflow associations
+                        ctx.ExecuteQuery();
+                        wfAssocName = association.Name;
+                        wfPlatform = "SPD2010";
+                        string associationId = association.Id.ToString();
+                        if (!string.IsNullOrEmpty(association.InstantiationUrl))
+                        {
+                            associationUrl = association.InstantiationUrl.ToLower();
+                            if (associationUrl.Contains("nintexworkflow"))
+                            {
+                                wfPlatform = "NINTEX";
+                                if (!wfAssocName.Contains("Previous Version"))
+                                {
+                                    nintexCounter++;
+                                }
+                            }
+                            else
+                            {
+                                if (!wfAssocName.Contains("Previous Version"))
+                                {
+                                    spd2010Counter++;
+                                }
+                            }
+                        }
+
+                        // Do not document each previous WF association, only capture information about the currently published WF association
+                        if (!wfAssocName.Contains("Previous Version"))
+                        {
+                            // Write 2010 WF the information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
+                            string[] passingWfObject = new string[12];
+                            passingWfObject[0] = csvFilePath;
+                            passingWfObject[1] = webApplication;
+                            passingWfObject[2] = siteCollId;
+                            passingWfObject[3] = webId;
+                            passingWfObject[4] = currentWebTitle;
+                            passingWfObject[5] = currentWebUrl;
+                            passingWfObject[6] = rootWebOwner;
+                            passingWfObject[7] = currentCtypeName;
+                            passingWfObject[8] = "Content Type Workflow";
+                            passingWfObject[9] = wfPlatform;
+                            passingWfObject[10] = wfAssocName;
+                            passingWfObject[11] = associationId;
+                            WriteReports.WriteText(passingWfObject);
+                        }
+                    }
+                }
+                if (siteCollection.RootWeb.Url == currentWebUrl)
+                {
+                    // connect to the deployment service
+                    var workflowDeploymentService = wfManager.GetWorkflowDeploymentService();
+                    // get all installed workflows
+                    var publishedWorkflowDefinitions = workflowDeploymentService.EnumerateDefinitions(true);
+                    ctx.Load(publishedWorkflowDefinitions);
+                    ctx.ExecuteQuery();
+                    foreach (var definition in publishedWorkflowDefinitions)
+                    {
+                        //Console.WriteLine(definition.DisplayName);
+                        ctx.Load(definition, wfDef => wfDef.DisplayName, wfDef => wfDef.Id, wfDef => wfDef.AssociationUrl, wfDef => wfDef.Published);
+                        ctx.ExecuteQuery();
+                        // Do not document each previous WF association, only capture information about the currently published WF association
+                        //if (!wfAssocName.Contains("Previous Version"))
+                        //{
+                            // Write 2010 WF the information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
+                            string[] passingWfObject = new string[12];
+                            passingWfObject[0] = csvFilePath;
+                            passingWfObject[1] = webApplication;
+                            passingWfObject[2] = siteCollId;
+                            passingWfObject[3] = webId;
+                            passingWfObject[4] = currentWebTitle;
+                            passingWfObject[5] = currentWebUrl;
+                            passingWfObject[6] = rootWebOwner;
+                            passingWfObject[7] = definition.DisplayName;
+                            passingWfObject[8] = "Content Type Workflow";
+                            passingWfObject[9] = "SPD2010";
+                            passingWfObject[10] = definition.AssociationUrl;
+                            passingWfObject[11] = definition.Id.ToString();
+                            WriteReports.WriteText(passingWfObject);
+                        //}
                     }
                 }
             }

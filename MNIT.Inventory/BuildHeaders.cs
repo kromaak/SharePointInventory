@@ -266,6 +266,20 @@ namespace MNIT.Inventory
             //passingDetailedPagesHeaderObject[4] = "Exported Web Part";
             //passingDetailedPagesHeaderObject[5] = "Page Modifiers";
             WriteReports.WriteText(passingDetailedPagesHeaderObject);
+            // Create a new file path for adding custom page layouts to a new custom report to act against
+            string recycledItemsPath = outputFilePath.Replace("DetailedWorkflow", "RecycleBinItems");
+            // Create a header for the Custom Pages and Page Layouts report
+            string[] passingRecycledItemsHeaderObject = new string[8];
+            passingRecycledItemsHeaderObject[0] = recycledItemsPath;
+            passingRecycledItemsHeaderObject[1] = "Web Application";
+            passingRecycledItemsHeaderObject[2] = "Site ID";
+            passingRecycledItemsHeaderObject[3] = "Web ID";
+            passingRecycledItemsHeaderObject[4] = "Site Title";
+            passingRecycledItemsHeaderObject[5] = "Site URL";
+            passingRecycledItemsHeaderObject[6] = "Recycled Item Original Location";
+            passingRecycledItemsHeaderObject[7] = "Deleted Date";
+            //passingRecycledItemsHeaderObject[5] = "Page Modifiers";
+            WriteReports.WriteText(passingRecycledItemsHeaderObject);
         }
     }
 }

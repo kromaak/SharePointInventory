@@ -304,9 +304,9 @@ namespace MNIT.Inventory
                     passingDetailedPagesObject[2] = siteCollId;
                     passingDetailedPagesObject[3] = webId;
                     passingDetailedPagesObject[4] = pageUrl;
-                    passingDetailedPagesObject[5] = webPartTitle;
-                    passingDetailedPagesObject[6] = pageLayoutDesc;
-                    passingDetailedPagesObject[7] = pageLayoutUrl;
+                    passingDetailedPagesObject[5] = pageLayoutDesc;
+                    passingDetailedPagesObject[6] = pageLayoutUrl;
+                    passingDetailedPagesObject[7] = webPartTitle;
                     //passingDetailedPagesObject[8] = webPartTitleUrl;
                     //passingDetailedPagesObject[5] = pageModifier;
                     WriteReports.WriteText(passingDetailedPagesObject);

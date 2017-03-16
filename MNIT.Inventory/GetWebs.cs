@@ -63,7 +63,6 @@ namespace MNIT.Inventory
 
             try
             {
-
                 // Get the sub web count for this sub site
                 int subWebCount = subWeb.Webs.Count;
                 strWebCount = subWebCount.ToString();
@@ -76,7 +75,15 @@ namespace MNIT.Inventory
                 if (subWeb.Url.ElementAt(8) != 'a')
                 {
                     // Site Logo for each web in site collection
-                    strSiteLogo = subWeb.SiteLogoUrl ?? "Inherited Site Logo";
+                    if (!string.IsNullOrEmpty(subWeb.SiteLogoUrl))
+                    {
+                        strSiteLogo = subWeb.SiteLogoUrl;
+                    }
+                    else
+                    {
+                        strSiteLogo = "Inherited Site Logo";
+                    }
+                    //strSiteLogo = !string.IsNullOrEmpty(subWeb.SiteLogoUrl) ? subWeb.SiteLogoUrl : "Inherited Site Logo";
                     // Alternate CSS
                     PropertyValues pv = subWeb.AllProperties;
                     foreach (var de in pv.FieldValues.Where(de => !de.Key.Contains("__InheritsAlternateCssUrl")))
@@ -106,7 +113,7 @@ namespace MNIT.Inventory
                 }
                 // Find the SCAs or owners of the site collection
                 Site siteCollection = ctx.Site;
-                ctx.Load(siteCollection, sc => sc.Owner, sc => sc.Url, sc => sc.RootWeb, sc => sc.RequiredDesignerVersion, sc => sc.CompatibilityLevel, sc => sc.Id, sc => sc.Usage);
+                ctx.Load(siteCollection, sc => sc.Owner, sc => sc.Url, sc => sc.RootWeb, sc => sc.RequiredDesignerVersion, sc => sc.CompatibilityLevel, sc => sc.Id, sc => sc.Usage, sc => sc.RecycleBin);
                 ctx.ExecuteQuery();
                 // Callout the primary owner of the site collection
                 rootWebOwner = siteCollection.Owner.Email;
@@ -172,10 +179,8 @@ namespace MNIT.Inventory
                     //string templateBaseType = tmpList.BaseType.ToString();
                     if (templateId == 850)
                     {
-
                         // Create a new file path for adding custom page layouts to a new custom report to act against
                         string customPagesPath = csvFilePath.Replace("Webs", "Pages");
-                        
                         string[] argsStrings = new string[4];
                         argsStrings[0] = siteAddress;
                         argsStrings[1] = customPagesPath;
@@ -228,11 +233,52 @@ namespace MNIT.Inventory
                         //strListOfListTemplates = Enumerable.Aggregate(items, strListOfListTemplates, (current, listItem) => current + ("; " + listItem.DisplayName));
                         listGalleryUrl += strListOfListTemplates;
                     }
-                    //// Get the basic info about the root web like sub web count
+                    // Get info about the site collection like total sub web count and size
                     //int subWebCount = subWeb.Webs.Count;
                     //strWebCount = subWebCount.ToString();
                     // Add site collection size with the appropriate label GB/MB/etc.
                     strSiteSize = SizeSuffix(conversionSize);
+
+                    var recycleBinCollection = siteCollection.RecycleBin;
+                    ctx.Load(recycleBinCollection);
+                    ctx.ExecuteQuery();
+                    var r = 0;
+                    var recycledItemUrl = "";
+                    var recycledItemDeletedDate = new DateTime();
+                    var recycledItemDirectory = "";
+
+                    // Build a URL that will include the directory and filename for each item in the recycle bin
+                    var siteUrl = "https://" + urlDomain + "/";
+                    var fullItemUrl = "";
+                    // Create a new file path for adding recycle bin objects to a new custom report to act against
+                    string recycleBinPath = csvFilePath.Replace("Webs", "RecycleBinItems");
+
+                    foreach (var recycledItem in recycleBinCollection)
+                    {
+                        // Get information about recycled items after a specified date
+                        ctx.Load(recycledItem, ri => ri.LeafName, ri => ri.DirName, ri => ri.DeletedDate);
+                        ctx.ExecuteQuery();
+                        DateTime firstDateTime = new DateTime(2017, 1, 1);
+                        if (recycledItem.DeletedDate > firstDateTime)
+                        {
+                            recycledItemUrl = recycledItem.LeafName;
+                            recycledItemDeletedDate = recycledItem.DeletedDate;
+                            recycledItemDirectory = recycledItem.DirName;
+                            fullItemUrl = siteUrl + recycledItemDirectory + "/" + recycledItemUrl;
+                            //Console.WriteLine(fullItemUrl + "; Deleted on: " + recycledItemDeletedDate);
+                            // Write this information to a separate report
+                            string[] passingRecycleBinObject = new string[8];
+                            passingRecycleBinObject[0] = recycleBinPath;
+                            passingRecycleBinObject[1] = webApplication;
+                            passingRecycleBinObject[2] = siteCollId;
+                            passingRecycleBinObject[3] = webId;
+                            passingRecycleBinObject[4] = subWeb.Title;
+                            passingRecycleBinObject[5] = subWeb.Url;
+                            passingRecycleBinObject[6] = fullItemUrl;
+                            passingRecycleBinObject[7] = recycledItemDeletedDate.ToString();
+                            WriteReports.WriteText(passingRecycleBinObject);
+                        }
+                    }
                 }
                 // Find all the webs that have a root folder called DropOffLibrary
                 string webUrl = subWeb.ServerRelativeUrl;
@@ -251,7 +297,7 @@ namespace MNIT.Inventory
                     rootFolder = "Drop Off Library";
                 }
                 // Write a line for each web
-                string[] passingWebObject = new string[19];
+                string[] passingWebObject = new string[21];
                 passingWebObject[0] = csvFilePath;
                 passingWebObject[1] = webApplication;
                 passingWebObject[2] = siteCollId;
@@ -271,8 +317,8 @@ namespace MNIT.Inventory
                 passingWebObject[16] = listGalleryUrl;
                 passingWebObject[17] = strSiteSize;
                 passingWebObject[18] = strWebCount;
-                //passingWebObject[19] = strSiteLogo;
-                //passingWebObject[20] = strAlternateCss;
+                passingWebObject[19] = strSiteLogo;
+                passingWebObject[20] = strAlternateCss;
                 //passingWebObject[21] = accessRequest;
                 WriteReports.WriteText(passingWebObject);
 
