@@ -3,9 +3,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.SharePoint.Client;
-//using WebServices.AlertsWebServiceReference;
-using System.Web;
-using System.Web.Services;
 using System.Web.Services.Description;
 using System.Web.Services.Protocols;
 
