@@ -43,6 +43,8 @@ namespace MNIT.Inventory
                 string urlDomain = tempUri.Host;
                 string urlProtocol = tempUri.Scheme;
                 string wfPlatform = "";
+                string wfEnabled = "";
+                string wfVersion = "";
                 string siteCollId = "";
                 string webId = "";
                 // find the SCAs or owners of the site collection
@@ -75,7 +77,7 @@ namespace MNIT.Inventory
                     string currentListTitle = tmpList.Title;
                     // Build the URL
                     string currentListUrl = urlProtocol + "://" + urlDomain + tmpList.DefaultViewUrl;
-                    string associationUrl = "";
+                    //string associationUrl = "";
                     // Connect to WF subscription service
                     WorkflowSubscriptionService wfSubscriptionService = wfManager.GetWorkflowSubscriptionService();
                     // Create WF Subscription Collection
@@ -87,19 +89,19 @@ namespace MNIT.Inventory
                     // Collect WF information about 2013 WFs
                     foreach (var wfSubscription in wfSubscriptions)
                     {
-                        ctx.Load(wfSubscription, wfSub => wfSub.Name, wfSub => wfSub.Id);
+                        ctx.Load(wfSubscription, wfSub => wfSub.Name, wfSub => wfSub.Id, wfSub => wfSub.Enabled);
                         ctx.ExecuteQuery();
                         string wfSubscriptionName = wfSubscription.Name;
                         string wfSubscriptionId = wfSubscription.Id.ToString();
+                        wfEnabled = wfSubscription.Enabled.ToString();
+                        //wfVersion = wfSubscription.ObjectVersion;
                         wfPlatform = "SPD2013";
                         if (!wfSubscriptionName.Contains("Previous Version"))
                         {
                             spd2013Counter++;
                         }
-                        //// Write the 2013 WF information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
-                        //WriteToStream(siteCollId, webId, currentWebTitle, currentWebUrl, rootWebOwner, currentListTitle, currentListUrl,
-                        //    wfPlatform, wfSubscriptionName, wfSubscriptionId, null, streamWriter);
-                        string[] passingWfObject = new string[12];
+                        // Write the 2013 WF information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
+                        string[] passingWfObject = new string[13];
                         passingWfObject[0] = csvFilePath;
                         passingWfObject[1] = webApplication;
                         passingWfObject[2] = siteCollId;
@@ -112,6 +114,8 @@ namespace MNIT.Inventory
                         passingWfObject[9] = wfPlatform;
                         passingWfObject[10] = wfSubscriptionName;
                         passingWfObject[11] = wfSubscriptionId;
+                        passingWfObject[12] = wfEnabled;
+                        //passingWfObject[13] = wfVersion;
                         WriteReports.WriteText(passingWfObject);
                     }
 
@@ -122,15 +126,17 @@ namespace MNIT.Inventory
                         string wfAssocName = "";
                         //string wfAssocType = "";
                         // Load WF associations and WF association properties
-                        ctx.Load(association, a => a.Name, a => a.Id);
+                        ctx.Load(association, a => a.Name, a => a.Id, a => a.Enabled);
                         // Execute Query against workflow associations
                         ctx.ExecuteQuery();
                         wfAssocName = association.Name;
                         wfPlatform = "SPD2010";
+                        wfEnabled = association.Enabled.ToString();
+                        //wfVersion = association.ObjectVersion;
                         string associationId = association.Id.ToString();
                         if (!string.IsNullOrEmpty(association.InstantiationUrl))
                         {
-                            associationUrl = association.InstantiationUrl.ToLower();
+                            string associationUrl = association.InstantiationUrl.ToLower();
                             if (associationUrl.Contains("nintexworkflow"))
                             {
                                 wfPlatform = "NINTEX";
@@ -153,7 +159,7 @@ namespace MNIT.Inventory
                         {
                             //// Write 2010 WF the information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
                             //WriteToStream(siteCollId, webId, currentWebTitle, currentWebUrl, rootWebOwner, currentListTitle, currentListUrl, wfPlatform, wfAssocName, associationId, null, streamWriter);
-                            string[] passingWfObject = new string[12];
+                            string[] passingWfObject = new string[13];
                             passingWfObject[0] = csvFilePath;
                             passingWfObject[1] = webApplication;
                             passingWfObject[2] = siteCollId;
@@ -166,6 +172,8 @@ namespace MNIT.Inventory
                             passingWfObject[9] = wfPlatform;
                             passingWfObject[10] = wfAssocName;
                             passingWfObject[11] = associationId;
+                            passingWfObject[12] = wfEnabled;
+                            //passingWfObject[13] = wfVersion;
                             WriteReports.WriteText(passingWfObject);
                         }
                     }
@@ -182,7 +190,7 @@ namespace MNIT.Inventory
                     // Build the URL
                     //string currentCtypeUrl = urlProtocol + "://" + urlDomain + tmpCtype.DefaultViewUrl;
                     string associationUrl = "";
-                    //// Build the Web Application Name
+                    // Build the Web Application Name
                     //string webApplication = urlDomain.Split('.')[0];
                     // Connect to WF subscription service
                     WorkflowSubscriptionService wfSubscriptionService = wfManager.GetWorkflowSubscriptionService();
@@ -196,17 +204,19 @@ namespace MNIT.Inventory
                     // Collect WF information about 2013 WFs
                     foreach (var wfSubscription in wfSubscriptions)
                     {
-                        ctx.Load(wfSubscription, wfSub => wfSub.Name, wfSub => wfSub.Id);
+                        ctx.Load(wfSubscription, wfSub => wfSub.Name, wfSub => wfSub.Id, wfSub => wfSub.Enabled);
                         ctx.ExecuteQuery();
                         string wfSubscriptionName = wfSubscription.Name;
                         string wfSubscriptionId = wfSubscription.Id.ToString();
                         wfPlatform = "SPD2013";
+                        wfEnabled = wfSubscription.Enabled.ToString();
+                        //wfVersion = wfSubscription.ObjectVersion;
                         if (!wfSubscriptionName.Contains("Previous Version"))
                         {
                             spd2013Counter++;
                         }
-                        //// Write the 2013 WF information about the site, the Content Type, the workflow association, and the workflow instance to the inventory CSV file
-                        string[] passingWfObject = new string[12];
+                        // Write the 2013 WF information about the site, the Content Type, the workflow association, and the workflow instance to the inventory CSV file
+                        string[] passingWfObject = new string[13];
                         passingWfObject[0] = csvFilePath;
                         passingWfObject[1] = webApplication;
                         passingWfObject[2] = siteCollId;
@@ -219,6 +229,8 @@ namespace MNIT.Inventory
                         passingWfObject[9] = wfPlatform;
                         passingWfObject[10] = wfSubscriptionName;
                         passingWfObject[11] = wfSubscriptionId;
+                        passingWfObject[12] = wfEnabled;
+                        //passingWfObject[13] = wfVersion;
                         WriteReports.WriteText(passingWfObject);
                     }
 
@@ -229,11 +241,13 @@ namespace MNIT.Inventory
                         string wfAssocName = "";
                         //string wfAssocType = "";
                         // Load WF associations and WF association properties
-                        ctx.Load(association, a => a.Name, a => a.Id);
+                        ctx.Load(association, a => a.Name, a => a.Id, a => a.Enabled);
                         // Execute Query against workflow associations
                         ctx.ExecuteQuery();
                         wfAssocName = association.Name;
                         wfPlatform = "SPD2010";
+                        wfEnabled = association.Enabled.ToString();
+                        //wfVersion = association.ObjectVersion;
                         string associationId = association.Id.ToString();
                         if (!string.IsNullOrEmpty(association.InstantiationUrl))
                         {
@@ -259,7 +273,7 @@ namespace MNIT.Inventory
                         if (!wfAssocName.Contains("Previous Version"))
                         {
                             // Write 2010 WF the information about the site, the list, the workflow association, and the workflow instance to the inventory CSV file
-                            string[] passingWfObject = new string[12];
+                            string[] passingWfObject = new string[13];
                             passingWfObject[0] = csvFilePath;
                             passingWfObject[1] = webApplication;
                             passingWfObject[2] = siteCollId;
@@ -272,6 +286,8 @@ namespace MNIT.Inventory
                             passingWfObject[9] = wfPlatform;
                             passingWfObject[10] = wfAssocName;
                             passingWfObject[11] = associationId;
+                            passingWfObject[12] = wfEnabled;
+                            //passingWfObject[13] = wfVersion;
                             WriteReports.WriteText(passingWfObject);
                         }
                     }
